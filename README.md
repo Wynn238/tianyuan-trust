@@ -38,22 +38,9 @@ node scripts/bootstrap-demo.mjs
 
 ## 快速启动
 
-### 一条命令（推荐）
+### 自动启动
 
-已安装 Git 和 Node.js 22+ 的电脑，在终端执行：
-
-```bash
-git clone https://github.com/Wynn238/tianyuan-trust.git
-cd tianyuan-trust
-node scripts/bootstrap-demo.mjs
-```
-
-脚本会自动：
-
-1. 安装 `platform` 依赖；
-2. 首次生成演示数据库；
-3. 把演示账号口令初始化为公开演示口令；
-4. 启动服务并打开 <http://127.0.0.1:8848>。
+见上方「最快查看」。脚本会自动安装依赖、生成演示数据库、设置演示口令并打开页面。
 
 ### 直接交给 AI Agent 的一句话
 
@@ -147,7 +134,7 @@ tests/acceptance/           验收测试与快照检查
 
 ## 测试
 
-复制环境变量模板，填入本地演示账号的手机号和口令：
+测试前先启动本地服务（默认 `http://127.0.0.1:8848`），然后复制环境变量模板，填入本地演示账号的手机号和口令：
 
 ```powershell
 Copy-Item .acceptance.env.example .acceptance.env

@@ -297,9 +297,9 @@ GET  /api/auth/me
 GET  /api/account/profile
 PATCH /api/account/profile
 GET  /api/account/export
-POST /api/account/delete-request
-GET  /api/consents
-POST /api/consents
+POST /api/account/delete
+GET  /api/account/consent
+POST /api/account/consent
 POST /api/events
 ```
 
@@ -334,8 +334,7 @@ POST /api/farmer/me/products
 PATCH /api/farmer/me/products/:id
 POST /api/farmer/me/batches
 POST /api/farmer/me/records
-GET  /api/farmer/me/orders
-GET  /api/farmer/me/settlements
+GET  /api/orders          # 农户同样走统一订单接口，自动裁剪为自己的商品行
 ```
 
 ### 运营
@@ -344,8 +343,8 @@ GET  /api/farmer/me/settlements
 GET  /api/admin/overview
 GET  /api/admin/orders
 GET  /api/admin/customers
-GET  /api/admin/tickets
-POST /api/admin/tickets/:id/resolve
+GET  /api/support/tickets
+POST /api/support/tickets/:id/resolve
 GET  /api/admin/profiles/consumers
 GET  /api/admin/profiles/farmers
 GET/POST /api/admin/profiles/snapshot
@@ -365,7 +364,7 @@ PATCH /api/admin/staff/:id
 GET  /api/admin/roles
 PATCH /api/admin/roles/:code
 GET  /api/admin/audit
-GET/POST /api/admin/settings
+GET/POST /api/settings
 POST /api/admin/demo/tamper
 ```
 
