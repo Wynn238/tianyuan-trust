@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>产地商城 · 田源可信</title>
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+<link rel="stylesheet" href="/assets/shop.css?v=20261127g">
+</head>
+<body class="page-shop">
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="nav-shell"></div>
+
+<main id="main">
+  <div class="container shop-wrap">
+
+    <!-- 搜索优先的首屏：参考盒马的搜索 + 分类入口 -->
+    <section class="shop-hero" data-enter aria-labelledby="shop-title">
+      <div class="shop-hero__copy">
+        <span class="eyebrow">产地商城</span>
+        <h1 class="heading-4 mt-100" id="shop-title">今天想吃什么？</h1>
+        <p class="body-6 muted mt-100">产地直发，有码可查。下单前先看一眼这批货的农事与检测。</p>
+      </div>
+      <form class="shop-searchbar" id="search-form" role="search">
+        <span class="icon" data-icon="search"></span>
+        <input id="shop-q" type="search" placeholder="搜品种、产地或农户" autocomplete="off" aria-label="搜索商品">
+        <button class="btn btn--primary" type="submit">搜索</button>
+      </form>
+      <div class="shop-hot">
+        <span class="caption-5 muted">热门</span>
+        <button type="button" data-hot="砀山">砀山酥梨</button>
+        <button type="button" data-hot="五常">五常大米</button>
+        <button type="button" data-hot="脐橙">赣南脐橙</button>
+        <button type="button" data-hot="枸杞">中宁枸杞</button>
+      </div>
+      <ul class="shop-promise" aria-label="服务承诺">
+        <li><span class="icon" data-icon="truck"></span>产地直发</li>
+        <li><span class="icon" data-icon="shield"></span>坏果包赔</li>
+        <li><span class="icon" data-icon="qr"></span>一箱一码</li>
+      </ul>
+    </section>
+
+    <!-- 分类快捷入口：盒马式圆形入口 -->
+    <nav class="cate-rail" id="cate-rail" aria-label="商品分类"></nav>
+
+    <div class="shop-body">
+      <!-- 筛选侧栏：参考惠农网的分类/产地/价格筛选 -->
+      <aside class="shop-side" aria-label="商品筛选">
+        <div class="side-block">
+          <p class="side-title">商品分类</p>
+          <div class="side-list" data-side="cat"></div>
+        </div>
+        <div class="side-block">
+          <p class="side-title">产地</p>
+          <div class="side-list" data-side="origin"></div>
+        </div>
+        <div class="side-block">
+          <p class="side-title">价格</p>
+          <div class="side-list" data-side="price"></div>
+        </div>
+        <label class="side-check">
+          <input type="checkbox" id="trace-only">
+          <span>只看可溯源</span>
+        </label>
+        <button class="btn btn--ghost btn--sm side-reset" type="button" id="reset-filters">重置筛选</button>
+      </aside>
+
+      <section class="shop-content" aria-label="商品列表">
+        <div class="shop-toolbar">
+          <p class="shop-count" id="shop-count">正在加载…</p>
+          <div class="shop-tools">
+            <div class="mobile-filters">
+              <label><span>分类</span><select class="select" id="m-cat" aria-label="分类"></select></label>
+              <label><span>产地</span><select class="select" id="m-origin" aria-label="产地"></select></label>
+              <label><span>价格</span><select class="select" id="m-price" aria-label="价格"></select></label>
+            </div>
+            <select class="select shop-sort" id="shop-sort" aria-label="排序方式">
+              <option value="recommend">综合排序</option>
+              <option value="sales">销量优先</option>
+              <option value="rating">评分优先</option>
+              <option value="price-asc">价格从低到高</option>
+              <option value="price-desc">价格从高到低</option>
+            </select>
+          </div>
+        </div>
+
+        <section class="shop-for-you" id="shop-for-you" hidden aria-labelledby="for-you-title">
+          <div class="shop-for-you__head">
+            <div>
+              <p class="eyebrow">推荐</p>
+              <h2 class="heading-5" id="for-you-title">为你推荐</h2>
+              <p class="caption-2 muted" id="for-you-reason"></p>
+            </div>
+          </div>
+          <div class="shop-grid shop-for-you__grid" id="shop-for-you-grid"></div>
+        </section>
+
+        <div class="shop-grid" id="shop-grid" aria-live="polite" aria-busy="true"></div>
+
+        <div class="shop-trust">
+          <div><b>先看码，再下单</b><span>有批次的商品可查地块、用药间隔与检测报告；没有批次的会明确标注。</span></div>
+          <a class="btn btn--secondary btn--sm" href="/trace.html">去查一个溯源码</a>
+        </div>
+        <p class="shop-note caption-5">价格为原型演示数据；下单、支付、发货均为演示流程，不产生真实交易。</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div data-footer></div>
+<script src="/assets/app.js?v=20261127g"></script>
+<script src="/assets/art.js"></script>
+<script src="/js/auth.js?v=20261127f"></script>
+<script src="/js/shop.js?v=20261127h"></script>
+<script src="/assets/vendor/gsap.min.js"></script>
+<script src="/assets/motion.js"></script>
+</body>
+</html>

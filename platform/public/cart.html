@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>购物车 · 田源可信</title>
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+<link rel="stylesheet" href="/assets/auth.css?v=20261127f">
+<style>
+  .cart-wrap{padding-top:calc(var(--nav-h) + var(--s-600));padding-bottom:var(--s-800)}
+  .cart-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.9fr);gap:var(--s-400);align-items:start}
+  .cart-item{display:grid;grid-template-columns:auto 96px minmax(0,1fr) auto;gap:var(--s-200);align-items:center;padding:var(--s-200) 0;border-bottom:1px solid var(--line)}
+  .cart-item:last-child{border-bottom:0}
+  .cart-art{width:96px;height:96px;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)}
+  .cart-art svg{width:100%;height:100%}
+  .cart-qty{display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:var(--r-sm);overflow:hidden}
+  .cart-qty button{width:36px;height:36px;border:0;background:var(--surface);cursor:pointer;font-size:16px}
+  .cart-qty span{width:40px;text-align:center;font-variant-numeric:tabular-nums}
+  .cart-check{width:20px;height:20px;accent-color:var(--green-700)}
+  .cart-summary{position:sticky;top:calc(var(--nav-h) + var(--s-300))}
+  .cart-line{display:flex;justify-content:space-between;gap:var(--s-100);padding:var(--s-75) 0;font-size:14px;color:var(--muted)}
+  .cart-line b{color:var(--ink)}
+  @media (max-width:900px){.cart-grid{grid-template-columns:minmax(0,1fr)}.cart-item{grid-template-columns:auto 72px minmax(0,1fr)}.cart-art{width:72px;height:72px}.cart-item__side{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}}
+</style>
+</head>
+<body class="page-cart">
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="nav-shell" data-nav="home"></div>
+<main id="main" class="container cart-wrap">
+  <div class="row between wrap gap-200">
+    <div>
+      <span class="eyebrow">购物车</span>
+      <h1 class="heading-3 mt-200">结算前，再看一眼证据</h1>
+      <p class="body-6 muted mt-100">价格、库存与批次以结算时服务端校验为准；本页为演示，不发起真实支付。</p>
+    </div>
+    <a class="btn btn--secondary btn--sm" href="/shop.html">继续逛商城</a>
+  </div>
+
+  <div class="cart-grid mt-500">
+    <section class="card card--pad" aria-label="购物车商品">
+      <div class="row between gap-100 mb-200">
+        <p class="body-4">已选商品</p>
+        <p class="caption-2 muted" id="cart-count">—</p>
+      </div>
+      <div id="cart-list" aria-live="polite"></div>
+      <div id="cart-empty" hidden></div>
+    </section>
+
+    <aside class="card card--pad cart-summary" aria-label="订单结算">
+      <p class="body-4">订单小结</p>
+      <div class="cart-line"><span>已选数量</span><b id="sum-qty">0 件</b></div>
+      <div class="cart-line"><span>商品金额</span><b id="sum-amount">¥0.00</b></div>
+      <div class="cart-line"><span>配送</span><b>冷链/快递按产地</b></div>
+      <div class="callout callout--amber mt-200">演示订单：提交后直接生成 paid 状态，不发起真实支付。</div>
+
+      <form id="address-form" class="mt-300">
+        <p class="body-5 mb-200">收货信息（仅保存为订单快照）</p>
+        <div class="stack gap-200">
+          <label class="field"><span class="field__label">收货人</span><input class="input" name="name" autocomplete="name" required placeholder="例：张女士"></label>
+          <label class="field"><span class="field__label">手机号</span><input class="input" name="phone" inputmode="numeric" autocomplete="tel" required placeholder="11 位手机号"></label>
+          <label class="field"><span class="field__label">城市 / 区</span><input class="input" name="city" required placeholder="例：上海市徐汇区"></label>
+          <label class="field"><span class="field__label">详细地址</span><input class="input" name="detail" required placeholder="街道、门牌号"></label>
+        </div>
+        <button class="btn btn--primary btn--block mt-300" type="submit" id="checkout-btn">提交演示订单</button>
+        <p class="caption-5 muted mt-100" id="checkout-hint">结算需要消费者登录；地址不会存入地址簿。</p>
+      </form>
+    </aside>
+  </div>
+</main>
+<div data-footer></div>
+<script src="/assets/app.js?v=20261127g"></script>
+<script src="/assets/art.js"></script>
+<script src="/js/auth.js?v=20261127f"></script>
+<script>initNav('home');</script>
+<script>
+(function () {
+  'use strict';
+  const list = document.getElementById('cart-list');
+  const empty = document.getElementById('cart-empty');
+  const guestKey = 'ty_guest_id';
+  let guestId = localStorage.getItem(guestKey);
+  if (!guestId) { guestId = (crypto.randomUUID ? crypto.randomUUID() : 'g' + Date.now()); localStorage.setItem(guestKey, guestId); }
+
+  function headers() {
+    const h = { 'X-Guest-Id': guestId };
+    const t = Auth.getToken();
+    if (t) h.Authorization = 'Bearer ' + t;
+    return h;
+  }
+  async function apiCart(path, opt) {
+    const res = await fetch(path, Object.assign({ headers: headers() }, opt || {}));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data.error && data.error.message) || '操作失败');
+    return data;
+  }
+  async function mergeIfLogged() {
+    if (!Auth.isLogged()) return;
+    try { await apiCart('/api/cart/merge', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers()), body: JSON.stringify({ guestId }) }); } catch (e) {}
+    localStorage.removeItem(guestKey);
+  }
+  function row(it) {
+    const p = it.product || {};
+    const b = it.batch || {};
+    return `<div class="cart-item" data-key="${it.key}">
+      <input class="cart-check" type="checkbox" ${it.checked ? 'checked' : ''} ${it.sellable ? '' : 'disabled'} aria-label="选择 ${esc(p.name || '')}">
+      <div class="cart-art">${productArt(p.art || 'pear', { size: 96 })}</div>
+      <div>
+        <a class="body-5" href="/product.html?id=${encodeURIComponent(it.productId)}">${esc(p.name || it.productId)}</a>
+        <p class="caption-2 muted">${esc(p.spec || '')} · ${esc(p.unit || '')}</p>
+        <p class="caption-2 muted">${it.sellable ? '批次 ' + esc(b.code || '') + ' · 可售 ' + it.available + ' 件' : '<span style="color:var(--red-700)">' + esc(it.reason || '不可售') + '</span>'}</p>
+      </div>
+      <div class="cart-item__side">
+        <div class="cart-qty"><button type="button" data-dec aria-label="减少">−</button><span>${it.qty}</span><button type="button" data-inc aria-label="增加">+</button></div>
+        <div class="row gap-100">
+          <b class="mono">${fmt.money(it.lineAmount)}</b>
+          <button class="btn btn--ghost btn--sm" type="button" data-remove>移除</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  async function render() {
+    let data;
+    try { data = await apiCart('/api/cart'); } catch (e) { toast(e.message, 'error'); return; }
+    const items = data.items || [];
+    document.getElementById('cart-count').textContent = items.length ? `${items.length} 种 · ${data.count} 件` : '暂无商品';
+    list.innerHTML = items.map(row).join('');
+    empty.hidden = items.length > 0;
+    if (!items.length) empty.innerHTML = emptyState('购物车还是空的', '去产地商城挑一件，扫码就能看到它的来路。', 'bag', '<a class="btn btn--primary btn--sm" href="/shop.html">去商城</a>');
+    document.getElementById('sum-qty').textContent = data.selectedCount + ' 件';
+    document.getElementById('sum-amount').textContent = fmt.money(data.selectedAmount);
+    list.querySelectorAll('.cart-item').forEach((node) => {
+      const key = node.dataset.key;
+      const qty = Number(node.querySelector('.cart-qty span').textContent);
+      node.querySelector('[data-inc]').onclick = () => patch(key, { qty: qty + 1 });
+      node.querySelector('[data-dec]').onclick = () => patch(key, { qty: Math.max(1, qty - 1) });
+      node.querySelector('[data-remove]').onclick = () => patch(key, { remove: true });
+      node.querySelector('.cart-check').onchange = (e) => patch(key, { checked: e.target.checked });
+    });
+  }
+  async function patch(key, body) {
+    try {
+      await apiCart('/api/cart/items/' + encodeURIComponent(key), { method: 'PATCH', headers: Object.assign({ 'Content-Type': 'application/json' }, headers()), body: JSON.stringify(body) });
+      window.dispatchEvent(new Event('cart:changed'));
+      render();
+    } catch (e) { toast(e.message, 'error'); }
+  }
+  document.getElementById('address-form').onsubmit = async (e) => {
+    e.preventDefault();
+    if (!Auth.isLogged()) { Auth.openLogin({ role: 'consumer', title: '登录后结算', onSuccess: () => location.reload() }); return; }
+    const f = e.target;
+    const btn = document.getElementById('checkout-btn');
+    btn.disabled = true; btn.textContent = '提交中…';
+    try {
+      await mergeIfLogged();
+      const data = await apiCart('/api/checkout', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers()), body: JSON.stringify({ name: f.name.value.trim(), phone: f.phone.value.trim(), city: f.city.value.trim(), detail: f.detail.value.trim() }) });
+      toast('演示订单已创建：' + data.order.no);
+      if (window.trackEvent) trackEvent('checkout', { objectType: 'order', objectId: data.order.id, meta: { no: data.order.no } });
+      location.href = '/account.html?order=' + encodeURIComponent(data.order.no);
+    } catch (err) { toast(err.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = '提交演示订单'; }
+  };
+  mergeIfLogged().then(render);
+})();
+</script>
+</body>
+</html>

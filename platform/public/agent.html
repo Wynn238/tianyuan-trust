@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智能体工作台 · 田源可信</title>
+<meta name="description" content="田源可信智能体工作台：溯源问答、内容生成与智能客服三个工作台，展示编排智能体与六个角色智能体的执行链路、引用来源与能力边界。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="智能体工作台 · 田源可信">
+<meta property="og:description" content="三个能力，干的是三件最费人的事：溯源问答、内容生成、智能客服。编排智能体负责分派，六个角色各管一段。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F3223'/%3E%3Cpath d='M8 24C8 15 15 8 25 7c1 10-6 17-15 17Z' fill='%23C9DFCF'/%3E%3Cpath d='M8 24C12 20 16 16 21 13' stroke='%230F3223' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+  <link rel="stylesheet" href="/assets/auth.css?v=20261127f">
+<style>
+/* 智能体工作台：只写布局，颜色、字号、间距、圆角全部取自 design.css */
+.agent-main{padding-top:calc(var(--nav-h) + var(--s-600));padding-bottom:var(--s-500)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* 头部 */
+.agent-head{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:var(--s-500);align-items:end}
+.agent-head__copy{display:flex;flex-direction:column;gap:var(--s-100);min-width:0}
+.agent-title{max-width:680px}
+.agent-sub{max-width:680px}
+.role-strip{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-50);margin-top:var(--s-25)}
+.role-strip .tag{background:var(--surface)}
+.agent-subnote{margin-top:var(--s-50)}
+.engine-card{display:flex;flex-direction:column;gap:var(--s-100);min-width:0;padding:var(--s-200);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
+.engine-card__main{display:flex;align-items:center;gap:var(--s-100)}
+.engine-card__icon{display:grid;place-items:center;flex:none;width:var(--s-500);height:var(--s-500);border-radius:var(--r-md);background:var(--green-100);color:var(--green-800)}
+.engine-card__icon svg{width:var(--s-300);height:var(--s-300)}
+.engine-card__label{display:flex;flex-direction:column;gap:var(--s-25);min-width:0}
+.engine-card__state{margin-left:auto}
+.engine-card__note{color:var(--muted)}
+
+/* 标签页 */
+.tabbar{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s-300);margin-top:var(--s-700)}
+.tabbar .tabs{flex:1;gap:var(--s-300)}
+.tabbar__hint{flex:none;padding-bottom:var(--s-100)}
+
+/* 主栅格与右侧固定栏 */
+.agent-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--s-400);align-items:start;margin-top:var(--s-400)}
+.agent-rail{position:sticky;top:calc(var(--nav-h) + var(--s-400));display:flex;flex-direction:column;gap:var(--s-300);max-height:calc(100vh - var(--nav-h) - var(--s-600));overflow-y:auto;padding-right:var(--s-50);scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
+.agent-rail::-webkit-scrollbar{width:6px}
+.agent-rail::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:var(--r-full)}
+.agent-panel{min-width:0}
+.panel-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:var(--s-300)}
+.panel-head__copy{display:flex;flex-direction:column;gap:var(--s-50);min-width:0}
+.panel-head__field{width:100%;max-width:320px}
+
+/* 建议问句 */
+.chips{display:flex;flex-wrap:wrap;gap:var(--s-75);margin-top:var(--s-200)}
+.chip{display:inline-flex;align-items:center;gap:var(--s-50);padding:var(--s-50) var(--s-100);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-full);color:var(--ink-2);cursor:pointer;transition:background .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease),transform .3s var(--ease)}
+.chip:hover{background:var(--surface-2);border-color:var(--green-200);color:var(--green-800)}
+.chip:active{transform:scale(.98)}
+.chip:disabled{opacity:.5;cursor:not-allowed}
+
+/* 对话 */
+.chat-log{display:flex;flex-direction:column;gap:var(--s-300);height:min(60vh, 760px);overflow-y:auto;margin-top:var(--s-300);padding:var(--s-25) var(--s-100) var(--s-200) var(--s-25);border-radius:var(--r-md);scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent;overscroll-behavior:contain}
+.chat-log::-webkit-scrollbar{width:6px}
+.chat-log::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:var(--r-full)}
+.chat-log .msg{max-width:100%;width:100%}
+.chat-log .msg--user{max-width:86%}
+.agent-bubble{width:100%;max-width:none;padding:var(--s-200)}
+.typing-row{display:flex;align-items:center;gap:var(--s-75);margin-bottom:var(--s-75)}
+.answer{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:var(--s-100)}
+.answer-wrap{opacity:0;transform:translateY(var(--s-75));transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.answer-wrap.is-in{opacity:1;transform:none}
+.workflow--chat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.workflow--chat .workflow__step{background:var(--surface);transition:opacity .3s var(--ease),border-color .3s var(--ease),background .3s var(--ease)}
+.workflow--chat .workflow__step:last-child:nth-child(odd){grid-column:span 2}
+.workflow__step.is-pending{opacity:.55}
+.workflow__step--warn{border-color:var(--amber-200);background:var(--amber-100)}
+.workflow__step--warn .workflow__idx{background:var(--amber-600);color:var(--surface)}
+.wf-body{display:flex;flex-direction:column;gap:var(--s-25);flex:1;min-width:0}
+.wf-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s-75)}
+.wf-tool{color:var(--muted);font-family:var(--font-mono)}
+.wf-skel{display:flex;flex-direction:column;gap:var(--s-50)}
+.answer-meta{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:var(--s-75);margin-top:var(--s-200);padding-top:var(--s-100)}
+.answer-meta::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--line)}
+.sources{gap:var(--s-50)}
+.source{width:100%;align-items:center;text-align:left;transition:border-color .3s var(--ease),background .3s var(--ease)}
+.source:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.source__body{display:flex;flex-direction:column;gap:var(--s-25);flex:1;min-width:0}
+.source__meta{flex:none;margin-left:auto}
+.source__arrow{width:var(--s-200);height:var(--s-200);color:var(--muted);flex:none}
+.followups{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-50);margin-top:var(--s-200)}
+
+/* 输入区 */
+.composer{position:relative;display:flex;align-items:flex-end;gap:var(--s-100);margin-top:var(--s-200);padding-top:var(--s-200)}
+.composer::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--line)}
+.composer__input{flex:1;min-height:var(--s-700);resize:none}
+.composer__send{flex:none}
+.composer__hint{margin-top:var(--s-75)}
+
+/* 内容生成 */
+.gen-grid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:var(--s-400);align-items:start;margin-top:var(--s-300)}
+.gen-form{display:flex;flex-direction:column;gap:var(--s-200)}
+.gen-form .segmented{display:flex;width:100%}
+.gen-form .segmented button{flex:1;white-space:nowrap}
+.gen-result{min-width:0;transition:opacity .3s var(--ease)}
+.gen-result.is-loading{opacity:.55}
+.gen-head{display:flex;align-items:center;gap:var(--s-100)}
+.gen-head__art{flex:none;width:var(--s-700);height:var(--s-700);border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)}
+.gen-head__art svg{width:100%;height:100%}
+.gen-head__text{display:flex;flex-direction:column;gap:var(--s-25);flex:1;min-width:0}
+.gen-head__badges{display:flex;flex-wrap:wrap;gap:var(--s-50);margin-top:var(--s-100)}
+.gen-note{display:flex;align-items:center;gap:var(--s-50);margin-top:var(--s-100)}
+.gen-note svg{flex:none;width:var(--s-200);height:var(--s-200)}
+.gen-block{padding-block:var(--s-200)}
+.gen-block__head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-100);margin-bottom:var(--s-100)}
+.gen-block__body{display:flex;flex-direction:column;gap:var(--s-75)}
+.gen-para{display:flex;flex-direction:column;gap:var(--s-25)}
+.gen-points{display:flex;flex-direction:column;gap:var(--s-75)}
+.gen-points li{display:flex;align-items:flex-start;gap:var(--s-100)}
+.gen-points__n{display:grid;place-items:center;flex:none;width:var(--s-300);height:var(--s-300);border-radius:50%;background:var(--green-100);color:var(--green-800)}
+.script-list{display:flex;flex-direction:column;gap:var(--s-100)}
+.script-item{display:flex;align-items:flex-start;gap:var(--s-100);padding:var(--s-100);background:var(--surface-2);border-radius:var(--r-sm)}
+.script-item__time{flex:none}
+.script-item__text{display:block;flex:1;min-width:0}
+.tag-row{display:flex;flex-wrap:wrap;gap:var(--s-50)}
+.gen-skeleton{display:flex;flex-direction:column;gap:var(--s-100)}
+
+/* 右侧栏卡片 */
+.rail-card{display:flex;flex-direction:column;gap:var(--s-200)}
+.rail-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-100)}
+.rail-flow{display:flex;flex-direction:column;gap:var(--s-200)}
+.rail-flow__item{position:relative;display:grid;grid-template-columns:var(--s-300) minmax(0,1fr);gap:var(--s-100)}
+.rail-flow__item:not(:last-child)::before{content:"";position:absolute;left:calc(var(--s-300) / 2);top:var(--s-300);bottom:calc(-1 * var(--s-200));width:1px;background:var(--line)}
+.rail-flow__n{position:relative;z-index:1;display:grid;place-items:center;flex:none;width:var(--s-300);height:var(--s-300);border-radius:50%;background:var(--green-100);color:var(--green-800)}
+.rail-flow__body{display:flex;flex-direction:column;gap:var(--s-25);min-width:0;padding-bottom:var(--s-25)}
+.rail-bounds{display:flex;flex-direction:column;gap:var(--s-200)}
+.rail-bounds li{display:grid;grid-template-columns:var(--s-300) minmax(0,1fr);align-items:start;gap:var(--s-100)}
+.rail-bounds__icon{display:grid;place-items:center;flex:none;width:var(--s-300);height:var(--s-300);border-radius:50%;background:var(--amber-100);color:var(--amber-800)}
+.rail-bounds__icon svg{width:var(--s-200);height:var(--s-200)}
+.rail-bounds__body{display:flex;flex-direction:column;gap:var(--s-25);min-width:0}
+.kb-list{display:flex;flex-direction:column;gap:var(--s-50);margin-top:var(--s-25)}
+.kb-item{overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm)}
+.kb-item__head{display:flex;align-items:center;gap:var(--s-75);width:100%;padding:var(--s-75) var(--s-100);background:transparent;border:0;cursor:pointer;text-align:left;transition:background .3s var(--ease)}
+.kb-item__head:hover{background:var(--surface-2)}
+.kb-item__title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb-item__chev{display:grid;place-items:center;flex:none;color:var(--muted);transition:transform .3s var(--ease)}
+.kb-item__chev svg{width:var(--s-200);height:var(--s-200)}
+.kb-item[data-open="true"] .kb-item__chev{transform:rotate(180deg)}
+.kb-item__body{display:flex;flex-direction:column;gap:var(--s-75);padding:0 var(--s-100) var(--s-100)}
+.kb-item__body[hidden]{display:none}
+.kb-item__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s-100)}
+
+/* 演示脚本 */
+.demo{margin-top:var(--s-800)}
+.demo__head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:var(--s-300)}
+.demo__copy{display:flex;flex-direction:column;gap:var(--s-100);min-width:0}
+.demo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-200);margin-top:var(--s-300)}
+.case{display:flex;flex-direction:column;gap:var(--s-75);padding:var(--s-200);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);text-align:left;cursor:pointer;transition:transform .5s var(--ease),box-shadow .5s var(--ease),border-color .5s var(--ease)}
+.case:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
+.case:active{transform:scale(.99)}
+.case__top{display:flex;align-items:center;gap:var(--s-75)}
+.case__tab{margin-left:auto}
+.case__arrow{display:inline-flex;color:var(--muted);transition:transform .3s var(--ease),color .3s var(--ease)}
+.case__arrow svg{width:var(--s-200);height:var(--s-200)}
+.case:hover .case__arrow{transform:translateX(var(--s-50));color:var(--green-700)}
+.case__q{display:block}
+.case__expect{display:block}
+.case__expect b{font-weight:600;color:var(--ink-2)}
+
+@media (max-width:1080px){
+  .agent-head{grid-template-columns:minmax(0,1fr);align-items:start}
+  .agent-layout{grid-template-columns:minmax(0,1fr)}
+  .agent-rail{position:static;top:auto;max-height:none;overflow:visible;padding-right:0}
+  .gen-grid{grid-template-columns:minmax(0,1fr)}
+  .demo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tabbar__hint{display:none}
+  .workflow--chat{grid-template-columns:minmax(0,1fr)}
+  .workflow--chat .workflow__step:last-child:nth-child(odd){grid-column:auto}
+  .chat-log{height:min(56vh, 680px)}
+}
+@media (max-width:560px){
+  .agent-main{padding-top:calc(var(--nav-h) + var(--s-400))}
+  .tabbar{margin-top:var(--s-500)}
+  .demo-grid{grid-template-columns:minmax(0,1fr)}
+  .panel-head__field{max-width:none}
+  .composer{flex-wrap:wrap}
+  .composer__send{width:100%}
+  .gen-head{flex-wrap:wrap}
+  .chat-log{height:min(54vh, 640px)}
+  .workflow--chat{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  .answer-wrap{transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="nav-shell"></div>
+
+<main id="main" class="agent-main">
+  <div class="container">
+
+    <header class="agent-head" data-reveal>
+      <div class="agent-head__copy">
+        <p class="eyebrow">智能体工作台 · AGENT WORKBENCH</p>
+        <h1 class="heading-3 agent-title">智能体工作台</h1>
+        <p class="body-3 ink-2 agent-sub">编排智能体负责分派，六个角色智能体各管一段。</p>
+        <ul class="role-strip" aria-label="六个角色智能体">
+          <li class="tag caption-4">分派</li>
+          <li class="tag caption-4">溯源</li>
+          <li class="tag caption-4">检测</li>
+          <li class="tag caption-4">冷链</li>
+          <li class="tag caption-4">内容</li>
+          <li class="tag caption-4">客服</li>
+        </ul>
+        <p class="caption-2 muted agent-subnote"><span data-kb-count>14</span> 篇知识库 · 9 条演示用例 · 每次回答附执行链路、引用与置信度</p>
+      </div>
+      <div class="engine-card" id="engineCard" aria-live="polite">
+        <div class="skeleton skeleton--text" style="width:64%"></div>
+        <div class="skeleton skeleton--text" style="width:92%"></div>
+        <div class="skeleton skeleton--text" style="width:48%"></div>
+      </div>
+    </header>
+
+    <div class="tabbar" id="how" data-reveal>
+      <div class="tabs" role="tablist" aria-label="工作台切换">
+        <button type="button" role="tab" id="tab-ask" data-tab="ask" aria-selected="true" aria-controls="panel-ask" tabindex="0">溯源问答</button>
+        <button type="button" role="tab" id="tab-content" data-tab="content" aria-selected="false" aria-controls="panel-content" tabindex="-1">内容生成</button>
+        <button type="button" role="tab" id="tab-service" data-tab="service" aria-selected="false" aria-controls="panel-service" tabindex="-1">智能客服</button>
+      </div>
+      <p class="caption-2 muted tabbar__hint" id="tabHint">回答附执行链路、引用与置信度，追问会沿用当前批次</p>
+    </div>
+
+    <div class="agent-layout">
+      <div class="agent-main-col">
+
+        <!-- A 溯源问答 -->
+        <section class="card card--pad agent-panel" id="panel-ask" role="tabpanel" aria-labelledby="tab-ask" data-reveal>
+          <div class="panel-head">
+            <div class="panel-head__copy">
+              <h2 class="heading-6">基于批次档案对话</h2>
+              <p class="body-6 muted">回答只引用链上记录、检测报告与平台规则库。</p>
+            </div>
+            <div class="field panel-head__field">
+              <label class="field__label" for="batchSelect">当前批次</label>
+              <select class="select" id="batchSelect" aria-describedby="batchHint">
+                <option value="">批次加载中</option>
+              </select>
+              <p class="field__hint" id="batchHint">不指定时，智能体会先追问批次</p>
+            </div>
+          </div>
+
+          <div class="chips" id="askChips" role="group" aria-label="建议问句">
+            <button class="chip body-5" type="button" data-ask="这箱梨打过几次药">这箱梨打过几次药</button>
+            <button class="chip body-5" type="button" data-ask="检测报告里农残合格吗">检测报告里农残合格吗</button>
+            <button class="chip body-5" type="button" data-ask="冷链温度正常吗">冷链温度正常吗</button>
+            <button class="chip body-5" type="button" data-ask="这批货有没有质量风险">这批货有没有质量风险</button>
+          </div>
+
+          <div class="chat chat-log" id="askLog" aria-live="polite" aria-label="溯源问答对话记录">
+            <div class="msg msg--user"><div class="msg__bubble skeleton" style="width:50%;height:var(--s-500)"></div></div>
+            <div class="msg msg--agent"><div class="msg__bubble agent-bubble">
+              <div class="skeleton skeleton--title"></div>
+              <div class="skeleton skeleton--text"></div>
+              <div class="skeleton skeleton--text" style="width:76%"></div>
+            </div></div>
+          </div>
+
+          <form class="composer" id="askForm" autocomplete="off">
+            <label class="sr-only" for="askInput">输入你的问题</label>
+            <textarea class="textarea composer__input" id="askInput" rows="2" placeholder="问用药、检测、冷链或质量风险，例如：这批货有没有质量风险"></textarea>
+            <button class="btn btn--primary composer__send" type="submit"><span data-icon="arrowRight"></span><span>发送</span></button>
+          </form>
+          <p class="caption-5 muted composer__hint">Enter 发送 · Shift + Enter 换行 · 仅保留最近 8 条消息</p>
+        </section>
+
+        <!-- B 内容生成 -->
+        <section class="card card--pad agent-panel" id="panel-content" role="tabpanel" aria-labelledby="tab-content" data-reveal hidden>
+          <div class="panel-head">
+            <div class="panel-head__copy">
+              <h2 class="heading-6">内容生成</h2>
+              <p class="body-6 muted">素材来自批次农事与检测记录，不凭空写。</p>
+            </div>
+            <span class="badge badge--amber">内容智能体</span>
+          </div>
+
+          <div class="gen-grid">
+            <form class="gen-form" id="contentForm">
+              <div class="field">
+                <label class="field__label" for="contentProduct">商品</label>
+                <select class="select" id="contentProduct">
+                  <option value="">商品加载中</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field__label" for="contentBatch">批次</label>
+                <select class="select" id="contentBatch">
+                  <option value="">批次加载中</option>
+                </select>
+                <p class="field__hint">批次决定可引用的农事、检测与冷链记录</p>
+              </div>
+              <div class="field">
+                <span class="field__label" id="channelLabel">渠道</span>
+                <div class="segmented" role="group" aria-labelledby="channelLabel" id="channelGroup">
+                  <button type="button" data-channel="朋友圈" aria-pressed="true">朋友圈</button>
+                  <button type="button" data-channel="小红书" aria-pressed="false">小红书</button>
+                  <button type="button" data-channel="详情页" aria-pressed="false">详情页</button>
+                </div>
+              </div>
+              <button class="btn btn--primary btn--block" type="submit" id="genBtn"><span data-icon="sparkle"></span><span>生成文案</span></button>
+              <div class="callout">
+                <span data-icon="shield"></span>
+                <p class="body-6">只使用该批次的农事记录、检测报告与农户档案，缺失字段会标为「未上传」。</p>
+              </div>
+            </form>
+
+            <div class="gen-result" id="genResult" aria-live="polite">
+              <div class="gen-skeleton">
+                <div class="skeleton skeleton--title"></div>
+                <div class="skeleton skeleton--text"></div>
+                <div class="skeleton skeleton--text" style="width:82%"></div>
+                <div class="skeleton skeleton--stat"></div>
+                <div class="skeleton skeleton--text" style="width:90%"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- C 智能客服 -->
+        <section class="card card--pad agent-panel" id="panel-service" role="tabpanel" aria-labelledby="tab-service" data-reveal hidden>
+          <div class="panel-head">
+            <div class="panel-head__copy">
+              <h2 class="heading-6">智能客服</h2>
+              <p class="body-6 muted">售后、物流、发票与结算问题，必要时转人工。</p>
+            </div>
+            <div class="field panel-head__field">
+              <label class="field__label" for="orderSelect">关联订单</label>
+              <select class="select" id="orderSelect" aria-describedby="orderHint">
+                <option value="">订单加载中</option>
+              </select>
+              <p class="field__hint" id="orderHint">不指定订单时，客服只回答通用规则</p>
+            </div>
+          </div>
+
+          <div class="chips" id="serviceChips" role="group" aria-label="建议问题">
+            <button class="chip body-5" type="button" data-service="坏了怎么赔">坏了怎么赔</button>
+            <button class="chip body-5" type="button" data-service="物流到哪了">物流到哪了</button>
+            <button class="chip body-5" type="button" data-service="能开发票吗">能开发票吗</button>
+            <button class="chip body-5" type="button" data-service="佣金怎么算">佣金怎么算</button>
+          </div>
+
+          <div class="chat chat-log" id="serviceLog" aria-live="polite" aria-label="智能客服对话记录">
+            <div class="msg msg--agent"><div class="msg__bubble agent-bubble">
+              <div class="skeleton skeleton--title"></div>
+              <div class="skeleton skeleton--text"></div>
+              <div class="skeleton skeleton--text" style="width:70%"></div>
+            </div></div>
+          </div>
+
+          <form class="composer" id="serviceForm" autocomplete="off">
+            <label class="sr-only" for="serviceInput">输入客服问题</label>
+            <textarea class="textarea composer__input" id="serviceInput" rows="2" placeholder="问售后赔付、物流进度、发票或佣金结算"></textarea>
+            <button class="btn btn--primary composer__send" type="submit"><span data-icon="arrowRight"></span><span>发送</span></button>
+          </form>
+          <p class="caption-5 muted composer__hint">回答附动作提示与知识库引用，涉及承诺时转人工</p>
+        </section>
+
+      </div>
+
+      <aside class="agent-rail" aria-label="智能体说明">
+        <section class="card card--pad rail-card" data-reveal>
+          <div class="rail-head">
+            <h2 class="heading-6">工作流</h2>
+            <span class="badge badge--green">5 步</span>
+          </div>
+          <p class="caption-2 muted">一次问答固定跑完五步，任一步失败都会显式说明。</p>
+          <ol class="rail-flow">
+            <li class="rail-flow__item">
+              <span class="rail-flow__n caption-3">1</span>
+              <div class="rail-flow__body">
+                <p class="body-5">感知</p>
+                <p class="caption-5 muted">读取批次档案、检测报告、冷链轨迹与预警</p>
+              </div>
+            </li>
+            <li class="rail-flow__item">
+              <span class="rail-flow__n caption-3">2</span>
+              <div class="rail-flow__body">
+                <p class="body-5">意图</p>
+                <p class="caption-5 muted">判断问的是用药、检测、冷链还是风险</p>
+              </div>
+            </li>
+            <li class="rail-flow__item">
+              <span class="rail-flow__n caption-3">3</span>
+              <div class="rail-flow__body">
+                <p class="body-5">工具</p>
+                <p class="caption-5 muted">按意图调用溯源、报告、间隔期与物流工具</p>
+              </div>
+            </li>
+            <li class="rail-flow__item">
+              <span class="rail-flow__n caption-3">4</span>
+              <div class="rail-flow__body">
+                <p class="body-5">检索</p>
+                <p class="caption-5 muted">命中知识库条目，标注引用来源与记录编号</p>
+              </div>
+            </li>
+            <li class="rail-flow__item">
+              <span class="rail-flow__n caption-3">5</span>
+              <div class="rail-flow__body">
+                <p class="body-5">合成</p>
+                <p class="caption-5 muted">先结论后依据，附置信度与可追问方向</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="card card--pad rail-card" data-reveal>
+          <div class="rail-head">
+            <h2 class="heading-6">能力边界</h2>
+            <span class="badge badge--amber">硬约束</span>
+          </div>
+          <ul class="rail-bounds">
+            <li>
+              <span class="rail-bounds__icon" data-icon="x"></span>
+              <div class="rail-bounds__body">
+                <p class="body-5">不承诺功效</p>
+                <p class="caption-5 muted">疾病、保健与疗效类问题直接说明无法判断</p>
+              </div>
+            </li>
+            <li>
+              <span class="rail-bounds__icon" data-icon="alert"></span>
+              <div class="rail-bounds__body">
+                <p class="body-5">不编造数据</p>
+                <p class="caption-5 muted">缺失字段标为未上传，不用默认值填充</p>
+              </div>
+            </li>
+            <li>
+              <span class="rail-bounds__icon" data-icon="flask"></span>
+              <div class="rail-bounds__body">
+                <p class="body-5">不替代检测</p>
+                <p class="caption-5 muted">只解读机构报告，不给出报告以外的合格结论</p>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section class="card card--pad rail-card" data-reveal>
+          <div class="rail-head">
+            <h2 class="heading-6">知识库</h2>
+            <span class="badge badge--green" data-kb-count>14</span>
+          </div>
+          <p class="caption-2 muted">平台规则与口径，共 14 篇，点开看正文前 80 字。</p>
+          <div class="kb-list" id="kbList">
+            <div class="skeleton skeleton--text" style="width:90%"></div>
+            <div class="skeleton skeleton--text" style="width:76%"></div>
+            <div class="skeleton skeleton--text" style="width:84%"></div>
+            <div class="skeleton skeleton--text" style="width:68%"></div>
+            <div class="skeleton skeleton--text" style="width:88%"></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="demo" id="demo" data-reveal>
+      <div class="demo__head">
+        <div class="demo__copy">
+          <p class="eyebrow">演示脚本</p>
+          <h2 class="heading-4">九条演示路径，点开就能跑</h2>
+          <p class="body-3 muted">点击任意用例，自动切到对应工作台并执行，方便答辩时按序讲解。</p>
+        </div>
+        <span class="badge badge--green">T1 — T9</span>
+      </div>
+      <div class="demo-grid" id="demoGrid"></div>
+    </section>
+
+  </div>
+</main>
+
+<div data-footer></div>
+<script src="/assets/app.js?v=20261127g"></script>
+<script src="/assets/art.js"></script>
+<script src="/js/auth.js?v=20261127f"></script>
+  <script src="/js/agent.js"></script>
+</body>
+</html>

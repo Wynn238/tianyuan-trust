@@ -1,0 +1,16 @@
+{
+  "name": "tianyuan-trust",
+  "version": "1.0.0",
+  "private": true,
+  "description": "田源可信 · 溯源助农平台（Phase 0：SQLite + Argon2 + Cookie 会话）",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "argon2": "^0.45.2",
+    "better-sqlite3": "^13.2.0"
+  }
+}

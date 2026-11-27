@@ -1,0 +1,14 @@
+# 不把本地数据库/迁移前数据打进镜像；容器首次启动由 data/seed.js 生成
+data/db.json
+data/db.json.pre-sqlite
+data/tianyuan.sqlite
+data/tianyuan.sqlite-shm
+data/tianyuan.sqlite-wal
+
+# 过程文件、依赖与版本库
+_work
+node_modules
+.git
+*.log
+SPEC.md
+UI-BRIEF.md

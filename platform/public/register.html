@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>注册 · 田源可信</title>
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+<link rel="stylesheet" href="/assets/auth.css?v=20261127f">
+<style>
+  .reg-wrap{min-height:100vh;display:grid;place-items:center;padding:calc(var(--nav-h) + var(--s-500)) var(--s-300) var(--s-700)}
+  .reg-card{width:100%;max-width:460px}
+  .reg-note{font-size:12px;line-height:18px;color:var(--muted)}
+</style>
+</head>
+<body class="page-register">
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="nav-shell" data-nav="home"></div>
+<main id="main" class="reg-wrap">
+  <section class="card card--pad-lg reg-card">
+    <div class="auth-modal__brand">
+      <span class="auth-modal__mark"></span>
+      <div>
+        <p class="body-4" style="margin:0">田源可信</p>
+        <p class="caption-5 muted" style="margin:0">消费者注册 · 演示</p>
+      </div>
+    </div>
+    <h1 class="heading-5 mt-200">创建消费者账号</h1>
+    <p class="body-6 muted mt-100">注册后可以下单、查看订单与售后记录。浏览和扫码溯源无需注册。</p>
+    <form id="reg-form" class="login-form" novalidate>
+      <label class="login-field"><span class="login-label">手机号</span><input class="login-input" name="phone" inputmode="numeric" autocomplete="username" placeholder="11 位手机号" required></label>
+      <label class="login-field"><span class="login-label">昵称（选填）</span><input class="login-input" name="nickname" maxlength="20" placeholder="例：张女士"></label>
+      <label class="login-field"><span class="login-label">密码</span><div class="pw-wrap"><input class="login-input" name="password" type="password" autocomplete="new-password" placeholder="至少 6 位" required><button class="pw-toggle" type="button" data-pw-toggle aria-label="显示密码"></button></div></label>
+      <label class="row gap-75" style="font-size:13px;line-height:20px;align-items:flex-start">
+        <input type="checkbox" name="agree" style="margin-top:3px;accent-color:var(--green-700)">
+        <span>我已阅读并同意演示协议；本原型不发送短信、不收集身份证等敏感信息。</span>
+      </label>
+      <p class="login-error" data-error role="alert" aria-live="polite"></p>
+      <button class="btn btn--primary login-submit" type="submit">注册并登录</button>
+    </form>
+    <p class="reg-note mt-200">演示环境：不发送短信验证码，注册成功即为可用账号。已有账号？<a href="/" data-login-link style="color:var(--green-700);font-weight:600">去登录</a></p>
+  </section>
+</main>
+<div data-footer></div>
+<script src="/assets/app.js?v=20261127g"></script>
+<script src="/js/auth.js?v=20261127f"></script>
+<script>initNav('home');</script>
+<script>
+(function () {
+  document.querySelectorAll('[data-icon]').forEach((n) => { n.innerHTML = icon(n.dataset.icon); n.removeAttribute('data-icon'); });
+  document.querySelectorAll('.auth-modal__mark,.pw-toggle').forEach((n) => { n.innerHTML = icon(n.classList.contains('pw-toggle') ? 'eye' : 'leaf'); });
+  const form = document.getElementById('reg-form');
+  const err = form.querySelector('[data-error]');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    err.textContent = '';
+    const phone = form.phone.value.trim(), password = form.password.value, nickname = form.nickname.value.trim();
+    if (!/^1\d{10}$/.test(phone)) { err.textContent = '请输入正确的手机号'; return; }
+    if (password.length < 6) { err.textContent = '密码至少 6 位'; return; }
+    if (!form.agree.checked) { err.textContent = '请先勾选演示协议'; return; }
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = '注册中…';
+    try {
+      const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, password, nickname, agree: true }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error((data.error && data.error.message) || '注册失败');
+      await Auth.login({ phone, password, role: 'consumer' });
+      toast('注册成功，已登录');
+      location.href = '/account.html';
+    } catch (e2) { err.textContent = e2.message; }
+    finally { btn.disabled = false; btn.textContent = '注册并登录'; }
+  };
+  const link = document.querySelector('[data-login-link]');
+  if (link) link.onclick = (e) => { e.preventDefault(); Auth.openLogin({ role: 'consumer' }); };
+})();
+</script>
+</body>
+</html>

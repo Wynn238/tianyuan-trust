@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "tables": {
+    "farmers": {
+      "rows": 10,
+      "sha256": "1db348cd9dcfc6d41b510f83346b72731840cb09856b383427666a9a07561d8e"
+    },
+    "products": {
+      "rows": 9,
+      "sha256": "6013e9141f2d57547bbe2f1d065040a60de90c39a486ddf2904c10058c4a46dd"
+    },
+    "batches": {
+      "rows": 12,
+      "sha256": "a87e4eb675e468153b69000e90fb2f8bc8faad92d6ec6c88901a89d15ea9e687"
+    },
+    "records": {
+      "rows": 56,
+      "sha256": "de6d29bde38f2519db488c935e557cd4b0d2821fa0ab1eff2d078f6782ef2454"
+    },
+    "tests": {
+      "rows": 6,
+      "sha256": "f479e3a76cafb55086159df1d8f642f00c28858edeae8b4f387320899088c131"
+    },
+    "shipments": {
+      "rows": 8,
+      "sha256": "72ab1ebaa714bf40661d7d9f7752c0cbf833fc2942513159ce1950f19c288510"
+    },
+    "orders": {
+      "rows": 13,
+      "sha256": "f50e29e2d5eb07927c2761ed0ea581a54d376e616a6b45df43f0a17e050d71fe"
+    },
+    "reviews": {
+      "rows": 5,
+      "sha256": "a246655e60369a730f6a0da300b8c5033878a15f38fff76d15112edd4b812fc7"
+    },
+    "alerts": {
+      "rows": 4,
+      "sha256": "83abe5d3ce2a80fb1768a984840c40b47a6ffcf6bb6c330e96760260207c7d8a"
+    },
+    "geos": {
+      "rows": 6,
+      "sha256": "141413b4b60fc205c66532ee7b5cfcd04998c8556119554a6c03f3ebf8fe53be"
+    },
+    "ledger": {
+      "rows": 56,
+      "sha256": "2a911c0e7f8eb9759d2e80b7cb55ccbb63c6ca62de39a554702ed57cf1da45a3"
+    },
+    "kb": {
+      "rows": 14,
+      "sha256": "8259dcad5ffe239375d0d50bb2b1630f58335991db42ffec0f5acfbfe2cc6231"
+    },
+    "applications": {
+      "rows": 1,
+      "sha256": "57167fc3ff4f89d3bf8282ba88b052192d1d595df3124df5ae31b23638d9f5e7"
+    }
+  },
+  "total": 200
+}

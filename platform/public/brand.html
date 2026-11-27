@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0A1A12">
+<title>品牌片 · 田源可信</title>
+<meta name="description" content="田源可信品牌片：从砀山的梨园到你的餐桌，一颗梨的来路，12 秒看完。">
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+<link rel="stylesheet" href="/assets/brand-film.css">
+<link rel="stylesheet" href="/assets/moved-content.css">
+</head>
+<body class="film-page">
+<a class="skip-link" href="#film-main">跳到主要内容</a>
+
+<header class="film-nav">
+  <a class="film-brand" href="/" aria-label="返回田源可信首页">
+    <img src="/assets/brand/mark.png" alt="" width="480" height="364">
+    <span><strong>田源可信</strong><small>溯源助农</small></span>
+  </a>
+  <nav class="film-nav__links" aria-label="页面导航">
+    <a href="/shop.html">产地商城</a>
+    <a href="/trace.html">溯源查询</a>
+    <a href="/">返回首页</a>
+  </nav>
+</header>
+
+<main id="film-main">
+  <section class="film-hero" data-enter aria-labelledby="film-title">
+    <p class="film-kicker"><span aria-hidden="true"></span>品牌片 · 2026</p>
+    <h1 class="film-title" id="film-title">让每一颗果子<br>都带着证据进城</h1>
+    <p class="film-lede">从砀山的梨园，到你的餐桌。12 秒，看完一颗梨的来路。</p>
+
+    <div class="film-frame" id="film-frame">
+      <video id="film" class="film-video"
+             autoplay muted loop playsinline preload="metadata"
+             poster="/assets/video/film-poster.jpg"
+             aria-label="田源可信品牌片：梨园、开箱、扫码与餐桌"></video>
+
+      <!-- 加载中 -->
+      <div class="film-loader" id="film-loader" role="status" aria-live="polite">
+        <span class="film-loader__line" aria-hidden="true"></span>
+        <span class="film-loader__text">正在加载品牌片</span>
+      </div>
+
+      <!-- 悬停 / 暂停时出现 -->
+      <button class="film-play" id="film-play" type="button" aria-label="播放品牌片">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+      </button>
+
+      <!-- 角落声音开关，常驻 -->
+      <button class="film-sound" id="film-sound" type="button" aria-pressed="false" aria-label="开启声音">
+        <svg class="icon-sound-off" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
+          <path d="M16 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <svg class="icon-sound-on" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
+          <path d="M16 8a5 5 0 010 8M18.5 5.5a9 9 0 010 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        </svg>
+      </button>
+
+      <!-- 加载失败 / 不支持时 -->
+      <div class="film-error" id="film-error" hidden>
+        <img class="film-error__poster" src="/assets/video/film-poster.jpg" alt="">
+        <div class="film-error__inner">
+          <p class="film-error__title">品牌片暂时无法播放</p>
+          <p class="film-error__text">网络或浏览器格式不支持，可以先看封面，稍后再试。</p>
+          <button class="film-error__play" id="film-error-play" type="button">播放品牌片</button>
+          <div class="film-error__actions">
+            <button class="film-error__retry" id="film-retry" type="button">重新加载</button>
+            <a class="film-error__link" href="/shop.html">先去逛商城</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="film-meta">
+      <span>12 秒 · 循环播放</span>
+      <span id="film-hint">默认静音 · 点击右下角开启声音</span>
+    </div>
+  </section>
+
+  <section class="moved-section" id="industry-data" aria-labelledby="industry-title">
+    <div class="container">
+      <div class="moved-section__head">
+        <span class="eyebrow">行业与平台数据</span>
+        <h2 id="industry-title">先把大盘说清楚，再谈一颗梨</h2>
+        <p>行业数字来自公开监测；批次覆盖与地标品类来自平台当前种子数据，不把样本说成全国。</p>
+      </div>
+      <div class="moved-stats">
+        <div class="moved-stat"><strong>3<small>万亿元</small></strong><span>2025 年农村网络零售额</span></div>
+        <div class="moved-stat"><strong>7,833.1<small>亿元</small></strong><span>农产品网络零售额</span></div>
+        <div class="moved-stat"><strong>8<small>件</small></strong><span>在售商品可查到批次</span></div>
+        <div class="moved-stat"><strong>6<small>个</small></strong><span>地理标志品类</span></div>
+      </div>
+      <p class="moved-source">数据来源：商务部 2025 年网络零售监测；批次覆盖与地标品类取自平台种子数据。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="film-footer">
+  <span>© 2026 田源可信 · 溯源助农</span>
+  <span class="film-footer__dot" aria-hidden="true">·</span>
+  <span>课程原型 · 品牌片为演示素材</span>
+</footer>
+
+<script src="/assets/vendor/gsap.min.js"></script>
+<script src="/assets/motion.js"></script>
+<script src="/js/brand-film.js"></script>
+</body>
+</html>

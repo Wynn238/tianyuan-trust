@@ -1,0 +1,25 @@
+
+# 本地账号、口令与验收环境
+.acceptance.env
+_private/
+
+# 本地运行/部署过程文件（含 NATAPP token、日志、数据库备份）
+_work/
+_backups/
+.dsh/
+deliverables/
+*.log
+
+# 运行时数据库与本地状态（不要提交用户数据、口令哈希和 API Key）
+platform/data/tianyuan.sqlite
+platform/data/tianyuan.sqlite-*
+platform/data/db.json
+platform/data/db.json.*
+
+# 依赖
+node_modules/
+platform/node_modules/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db

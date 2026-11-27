@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>农户入驻 · 田源可信</title>
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+<link rel="stylesheet" href="/assets/auth.css?v=20261127f">
+<style>
+  .apply-wrap{padding-top:calc(var(--nav-h) + var(--s-500));padding-bottom:var(--s-800)}
+  .apply-grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:var(--s-400);align-items:start}
+  .apply-card{max-width:560px}
+  .steps{display:flex;gap:var(--s-100);flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .steps span{display:inline-flex;align-items:center;gap:6px}
+  .steps b{width:18px;height:18px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:11px;color:var(--ink-2)}
+  .status-card{border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s-300);background:var(--surface)}
+  @media (max-width:900px){.apply-grid{grid-template-columns:minmax(0,1fr)}}
+</style>
+<link rel="stylesheet" href="/assets/moved-content.css">
+</head>
+<body class="page-apply">
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="nav-shell" data-nav="home"></div>
+<main id="main" class="container apply-wrap">
+  <div class="apply-grid">
+    <section>
+      <span class="eyebrow">农户 / 合作社</span>
+      <h1 class="heading-3 mt-200">把地里的记录，变成可核验的凭证</h1>
+      <p class="body-6 muted mt-200">入驻后可以建立批次、用语音/拍照记录农事、生成溯源码并进入产地商城。新账号需运营审核通过后才能使用工作台。</p>
+      <div class="steps mt-300">
+        <span><b>1</b>注册农户账号</span><span><b>2</b>提交资料</span><span><b>3</b>运营审核</span><span><b>4</b>开始记录</span>
+      </div>
+      <div class="callout callout--amber mt-400">演示说明：材料上传只保存文件名、类型和大小，不真实存储文件；审核为人工演示流程。</div>
+    </section>
+
+    <section id="apply-panel"></section>
+  </div>
+</main>
+
+<section class="moved-section" id="business-model" aria-labelledby="model-title">
+  <div class="container">
+    <div class="moved-section__head">
+      <span class="eyebrow">商业模式</span>
+      <h2 id="model-title">三笔收入，都不从一箱梨里多刮一层</h2>
+      <p>平台向交易和工具收费，不向“溯源”这个标签收费。地头价不抽成，冷链费用不加价。</p>
+    </div>
+    <div class="moved-models">
+      <article class="moved-model">
+        <span class="tag badge badge--green">按成交收</span>
+        <h3>交易佣金</h3>
+        <strong>3%</strong>
+        <p>首年 1.5%，只在成交后收。按商品成交额计，退货订单不收；地头收购价与冷链物流费不计入佣金基数。</p>
+      </article>
+      <article class="moved-model">
+        <span class="tag badge badge--green">按合作社收</span>
+        <h3>合作社 SaaS</h3>
+        <strong>1,999 元/年</strong>
+        <p>批次、赋码、记录、对账、看板。按合作社收，不按人头加价；社员用手机加入。</p>
+      </article>
+      <article class="moved-model">
+        <span class="tag badge badge--green">按枚收</span>
+        <h3>赋码服务</h3>
+        <strong>0.02 元/枚</strong>
+        <p>防伪码与批次码，含查询与校验。合作社自己打印也认，平台只收码与校验服务费。</p>
+      </article>
+    </div>
+  </div>
+</section>
+<div data-footer></div>
+<script src="/assets/app.js?v=20261127g"></script>
+<script src="/js/auth.js?v=20261127f"></script>
+<script>initNav('home');</script>
+<script>
+(function () {
+  'use strict';
+  const panel = document.getElementById('apply-panel');
+  let me = null, app = null;
+
+  function loginForm(roleTitle) {
+    return `<div class="card card--pad-lg apply-card">
+      <p class="eyebrow">农户账号登录</p>
+      <h2 class="heading-5 mt-100">登录后提交入驻申请</h2>
+      <form class="login-form" data-login>
+        <label class="login-field"><span class="login-label">手机号</span><input class="login-input" name="phone" inputmode="numeric" placeholder="11 位手机号" required></label>
+        <label class="login-field"><span class="login-label">密码</span><input class="login-input" name="password" type="password" required placeholder="密码"></label>
+        <p class="login-error" data-error role="alert"></p>
+        <button class="btn btn--primary login-submit" type="submit">登录</button>
+      </form>
+      <p class="caption-5 muted mt-200">还没有账号？<a href="#" data-register style="color:var(--green-700);font-weight:600">注册农户账号</a></p>
+    </div>`;
+  }
+  function registerForm() {
+    return `<div class="card card--pad-lg apply-card">
+      <p class="eyebrow">新农户注册</p>
+      <h2 class="heading-5 mt-100">先创建一个农户账号</h2>
+      <form class="login-form" data-register-form>
+        <label class="login-field"><span class="login-label">手机号</span><input class="login-input" name="phone" inputmode="numeric" placeholder="11 位手机号" required></label>
+        <label class="login-field"><span class="login-label">联系人</span><input class="login-input" name="contact" placeholder="真实姓名或称呼" required></label>
+        <label class="login-field"><span class="login-label">密码</span><input class="login-input" name="password" type="password" placeholder="至少 6 位" required></label>
+        <p class="login-error" data-error role="alert"></p>
+        <button class="btn btn--primary login-submit" type="submit">注册农户账号</button>
+      </form>
+      <p class="caption-5 muted mt-200">已有账号？<a href="#" data-login-link style="color:var(--green-700);font-weight:600">去登录</a>。注册后账号为待审核状态。</p>
+    </div>`;
+  }
+  function applyForm(rejected) {
+    return `<div class="card card--pad-lg apply-card">
+      <div class="row between gap-100"><h2 class="heading-5">入驻资料</h2>${app ? statusBadge('application', app.status) : ''}</div>
+      ${rejected ? `<div class="callout callout--red mt-200">上次申请被驳回：${esc(app.rejectReason || '请补充资料')}。修改后可重新提交。</div>` : ''}
+      <form class="login-form mt-300" data-apply>
+        <label class="login-field"><span class="login-label">经营主体类型</span><select class="select" name="orgType"><option>家庭农场</option><option>合作社</option><option>个体农户</option><option>农业企业</option></select></label>
+        <label class="login-field"><span class="login-label">农户 / 合作社名称</span><input class="login-input" name="orgName" value="${esc(app ? app.orgName : '')}" required></label>
+        <label class="login-field"><span class="login-label">所在地区</span><input class="login-input" name="region" value="${esc(app ? app.region : '')}" placeholder="省 / 市 / 县 / 镇" required></label>
+        <label class="login-field"><span class="login-label">联系人</span><input class="login-input" name="contact" value="${esc(app ? app.contact : '')}" required></label>
+        <label class="login-field"><span class="login-label">主营品类</span><input class="login-input" name="mainCategory" value="${esc(app ? app.mainCategory : '')}" placeholder="例：水果 / 粮油 / 肉禽蛋" required></label>
+        <label class="login-field"><span class="login-label">经营说明</span><textarea class="textarea" name="description" maxlength="500" required>${esc(app ? app.description : '')}</textarea></label>
+        <label class="login-field"><span class="login-label">资质材料（演示，仅记录元数据）</span><input class="input" type="file" name="material" accept="image/*,.pdf"></label>
+        <p class="login-error" data-error role="alert"></p>
+        <button class="btn btn--primary login-submit" type="submit">${rejected ? '重新提交申请' : '提交入驻申请'}</button>
+      </form>
+    </div>`;
+  }
+  function statusPanel() {
+    if (!app) return applyForm(false);
+    if (app.status === 'approved') {
+      return `<div class="status-card">
+        <span class="badge badge--green">已通过</span>
+        <h2 class="heading-5 mt-200">审核已通过</h2>
+        <p class="body-6 muted mt-100">农户编号 ${esc(app.farmerId || '')}，现在可以进入工作台记录农事。</p>
+        <a class="btn btn--primary mt-300" href="/farmer.html">进入农户工作台</a>
+      </div>`;
+    }
+    if (app.status === 'pending') {
+      return `<div class="status-card">
+        <span class="badge badge--amber">待审核</span>
+        <h2 class="heading-5 mt-200">申请已提交</h2>
+        <p class="body-6 muted mt-100">运营会在演示流程中审核。审核通过前工作台不可用。</p>
+        <div class="stack gap-75 mt-300">
+          <div class="kv"><span class="kv__k">经营主体</span><span class="kv__v">${esc(app.orgName)}</span></div>
+          <div class="kv"><span class="kv__k">提交时间</span><span class="kv__v">${fmt.date(app.submittedAt, true)}</span></div>
+          <div class="kv"><span class="kv__k">材料</span><span class="kv__v">${(app.materials || []).length} 份（演示）</span></div>
+        </div>
+        <p class="caption-5 muted mt-200">可以先去农户端登录页查看状态；审核通过后页面会显示入口。</p>
+      </div>`;
+    }
+    return applyForm(true);
+  }
+  async function load() {
+    if (!Auth.isLogged()) { panel.innerHTML = loginForm(); bindLogin(); return; }
+    me = Auth.getUser();
+    if (me.role !== 'farmer') {
+      panel.innerHTML = `<div class="card card--pad-lg apply-card"><p class="body-4">当前账号是${esc(me.role === 'admin' ? '运营' : '消费者')}，不能提交农户入驻。</p><p class="body-6 muted mt-100">请退出后用农户账号登录，或新注册一个农户账号。</p><button class="btn btn--secondary mt-300" type="button" data-logout>退出当前账号</button></div>`;
+      panel.querySelector('[data-logout]').onclick = () => Auth.logout();
+      return;
+    }
+    try {
+      const r = await fetch('/api/farmer/application', { headers: { Authorization: 'Bearer ' + Auth.getToken() } });
+      const d = await r.json();
+      app = d.application || null;
+    } catch (e) { app = null; }
+    panel.innerHTML = statusPanel();
+    bindApply();
+  }
+  function bindLogin() {
+    const form = panel.querySelector('[data-login]');
+    if (form) form.onsubmit = async (e) => {
+      e.preventDefault();
+      try { await Auth.login({ phone: form.phone.value.trim(), password: form.password.value, role: 'farmer' }); location.reload(); }
+      catch (err) { panel.querySelector('[data-error]').textContent = err.message; }
+    };
+    const reg = panel.querySelector('[data-register]');
+    if (reg) reg.onclick = (e) => { e.preventDefault(); panel.innerHTML = registerForm(); bindRegister(); };
+    const login = panel.querySelector('[data-login-link]');
+    if (login) login.onclick = (e) => { e.preventDefault(); panel.innerHTML = loginForm(); bindLogin(); };
+  }
+  function bindRegister() {
+    const form = panel.querySelector('[data-register-form]');
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const err = panel.querySelector('[data-error]');
+      err.textContent = '';
+      try {
+        const r = await fetch('/api/farmer/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: form.phone.value.trim(), password: form.password.value, contact: form.contact.value.trim() }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error((d.error && d.error.message) || '注册失败');
+        await Auth.login({ phone: form.phone.value.trim(), password: form.password.value, role: 'farmer' });
+        location.reload();
+      } catch (e2) { err.textContent = e2.message; }
+    };
+    const login = panel.querySelector('[data-login-link]');
+    if (login) login.onclick = (e) => { e.preventDefault(); panel.innerHTML = loginForm(); bindLogin(); };
+  }
+  function bindApply() {
+    const form = panel.querySelector('[data-apply]');
+    if (!form) return;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const file = form.material.files[0];
+      const materials = file ? [{ name: file.name, type: file.type || 'application/octet-stream', size: file.size }] : [];
+      const payload = {
+        orgType: form.orgType.value, orgName: form.orgName.value.trim(), region: form.region.value.trim(),
+        contact: form.contact.value.trim(), mainCategory: form.mainCategory.value.trim(),
+        description: form.description.value.trim(), materials,
+      };
+      try {
+        const r = await fetch('/api/farmer/application', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + Auth.getToken() }, body: JSON.stringify(payload) });
+        const d = await r.json();
+        if (!r.ok) throw new Error((d.error && d.error.message) || '提交失败');
+        toast('入驻申请已提交（演示）');
+        app = d.application; panel.innerHTML = statusPanel(); bindApply();
+      } catch (err) { panel.querySelector('[data-error]').textContent = err.message; }
+    };
+  }
+  if (window.Auth && Auth.ready) Auth.ready.then(load); else load();
+})();
+</script>
+</body>
+</html>

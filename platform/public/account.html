@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个人中心 · 田源可信</title>
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/assets/design.css?v=20261127c">
+<link rel="stylesheet" href="/assets/auth.css?v=20261127f">
+<style>
+  .acc-wrap{padding-top:calc(var(--nav-h) + var(--s-600));padding-bottom:var(--s-800)}
+  .acc-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:var(--s-400);align-items:start}
+  .order-card{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:var(--s-300);display:flex;flex-direction:column;gap:var(--s-200)}
+  .order-head{display:flex;justify-content:space-between;gap:var(--s-100);flex-wrap:wrap;align-items:center}
+  .order-item{display:flex;justify-content:space-between;gap:var(--s-200);padding:var(--s-75) 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .order-item:last-child{border-bottom:0}
+  .acc-hint{font-size:13px;line-height:20px;color:var(--muted)}
+  @media (max-width:900px){.acc-grid{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body class="page-account">
+<a class="skip-link" href="#main">跳到主要内容</a>
+<div class="nav-shell" data-nav="home"></div>
+<main id="main" class="container acc-wrap">
+  <div id="account-guest" hidden>
+    <div class="card card--pad-lg" style="max-width:520px">
+      <span class="eyebrow">个人中心</span>
+      <h1 class="heading-4 mt-200">登录后查看订单</h1>
+      <p class="body-6 muted mt-100">订单、售后与评价只对下单本人可见。</p>
+      <div class="row gap-100 mt-300">
+        <button class="btn btn--primary" id="login-btn" type="button">登录</button>
+        <a class="btn btn--secondary" href="/register.html">注册消费者账号</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="account-main" hidden>
+    <div class="row between wrap gap-200">
+      <div>
+        <span class="eyebrow">个人中心</span>
+        <h1 class="heading-3 mt-200" id="acc-name">我的账户</h1>
+        <p class="body-6 muted mt-100" id="acc-sub">订单与售后记录仅本人可见</p>
+      </div>
+      <a class="btn btn--secondary btn--sm" href="/shop.html">继续逛商城</a>
+    </div>
+
+    <div class="acc-grid mt-500">
+      <aside class="stack gap-300">
+        <section class="card card--pad">
+          <p class="body-4">基本资料</p>
+          <div class="row gap-100 mt-200">
+            <span class="avatar avatar--lg" id="acc-avatar">张</span>
+            <div>
+              <p class="body-5" id="acc-nick">—</p>
+              <p class="caption-2 muted" id="acc-phone">—</p>
+            </div>
+          </div>
+          <form id="profile-form" class="field mt-300">
+            <label class="field"><span class="field__label">昵称</span><input class="input" name="nickname" maxlength="20" placeholder="修改昵称"></label>
+            <button class="btn btn--secondary btn--sm mt-200" type="submit">保存昵称</button>
+            <p class="caption-5 muted">仅可修改昵称；角色与手机号不可在此修改。</p>
+          </form>
+        </section>
+        <section class="card card--pad">
+          <p class="body-4">账户概览</p>
+          <div class="stack gap-75 mt-200">
+            <div class="kv"><span class="kv__k">订单</span><span class="kv__v" id="stat-orders">0</span></div>
+            <div class="kv"><span class="kv__k">售后记录</span><span class="kv__v" id="stat-aftersales">0</span></div>
+            <div class="kv"><span class="kv__k">已评价商品</span><span class="kv__v" id="stat-reviews">0</span></div>
+          </div>
+          <a class="btn btn--ghost btn--sm mt-200" href="/cart.html">去购物车</a>
+        </section>
+        <section class="card card--pad" id="privacy-card">
+          <p class="body-4">隐私与数据</p>
+          <label class="row gap-100 mt-200" style="align-items:flex-start;cursor:pointer">
+            <input type="checkbox" id="privacy-consent" style="margin-top:3px;accent-color:var(--green-700)">
+            <span class="body-6 muted">同意接收个性化推荐；可随时关闭</span>
+          </label>
+          <p class="caption-5 muted mt-100" id="consent-status">尚未记录</p>
+          <label class="row gap-100 mt-200" style="align-items:flex-start;cursor:pointer">
+            <input type="checkbox" id="profile-consent" style="margin-top:3px;accent-color:var(--green-700)">
+            <span class="body-6 muted">允许基于我的订单生成匿名偏好标签；关闭则后台不显示画像标签</span>
+          </label>
+          <p class="caption-5 muted mt-100" id="profile-consent-status">尚未记录</p>
+          <div class="row wrap gap-100 mt-200">
+            <button class="btn btn--secondary btn--sm" type="button" id="privacy-export">导出我的数据</button>
+            <button class="btn btn--ghost btn--sm" type="button" id="privacy-delete">申请注销</button>
+          </div>
+          <p class="caption-5 muted mt-100">注销为申请记录；订单与溯源数据按合规要求保留。</p>
+        </section>
+        <section class="card card--pad" id="ticket-card">
+          <p class="body-4">客服工单</p>
+          <p class="caption-2 muted mt-100">售后、溯源或订单问题，提交后客服会处理并通知你。</p>
+          <form id="ticket-form" class="stack gap-100 mt-200">
+            <label class="field"><span class="field__label">类型</span>
+              <select class="select" name="type">
+                <option value="aftersale">售后</option>
+                <option value="trace">溯源</option>
+                <option value="order">订单</option>
+                <option value="other">其他</option>
+              </select>
+            </label>
+            <label class="field"><span class="field__label">标题</span><input class="input" name="subject" maxlength="80" placeholder="一句话说明问题" required></label>
+            <label class="field"><span class="field__label">说明</span><textarea class="textarea" name="description" maxlength="1000" placeholder="补充订单号、看到的情况"></textarea></label>
+            <button class="btn btn--secondary btn--sm" type="submit">提交工单</button>
+          </form>
+          <div id="ticket-list" class="stack gap-100 mt-200" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <section>
+        <div class="row between gap-100">
+          <h2 class="heading-6">我的订单</h2>
+          <span class="caption-2 muted" id="orders-note">按创建时间倒序</span>
+        </div>
+        <div id="orders" class="stack gap-300 mt-200" aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div data-footer></div>
+<script src="/assets/app.js?v=20261127g"></script>
+<script src="/assets/art.js"></script>
+<script src="/js/auth.js?v=20261127f"></script>
+<script>initNav('home');</script>
+<script>
+(function () {
+  'use strict';
+  const guest = document.getElementById('account-guest');
+  const main = document.getElementById('account-main');
+  const ordersEl = document.getElementById('orders');
+  let me = null;
+
+  function authHeaders() { return { Authorization: 'Bearer ' + Auth.getToken() }; }
+  async function get(path) {
+    const r = await fetch(path, { headers: authHeaders() });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((d.error && d.error.message) || '加载失败');
+    return d;
+  }
+  function itemRows(o) {
+    return (o.items || []).map((i) => {
+      const p = i.productSnapshot || {};
+      return `<div class="order-item"><span>${esc(p.name || i.productId)} <span class="muted">× ${i.qty}</span></span><span class="mono">${fmt.money(i.lineAmount)}</span></div>`;
+    }).join('');
+  }
+  function orderCard(o) {
+    const items = o.items || [];
+    const canReview = o.status === 'done' || o.status === 'delivered' || o.status === 'aftersale';
+    return `<article class="order-card" data-id="${o.id}">
+      <div class="order-head">
+        <div><p class="body-5 mono">${esc(o.no)}</p><p class="caption-5 muted">${fmt.date(o.createdAt, true)}</p></div>
+        <div class="row gap-100">${statusBadge('order', o.status)}<b class="mono">${fmt.money(o.totalAmount || o.amount || 0)}</b></div>
+      </div>
+      <div>${itemRows(o)}</div>
+      ${o.afterSale ? `<div class="callout callout--amber">已申请售后：${esc({ bad: '坏果', missing: '缺件', other: '其他' }[o.afterSale.type] || o.afterSale.type)} · ${esc(o.afterSale.autoResult || '')}（演示自动核赔）</div>` : ''}
+      <div class="row wrap gap-100">
+        <button class="btn btn--secondary btn--sm" type="button" data-buy="${o.id}">再次购买</button>
+        ${canReview ? `<button class="btn btn--ghost btn--sm" type="button" data-review="${o.id}">评价</button>` : ''}
+        <a class="btn btn--ghost btn--sm" href="/trace.html?code=${encodeURIComponent((items[0] && items[0].batchSnapshot && items[0].batchSnapshot.code) || '')}">查看溯源</a>
+      </div>
+    </article>`;
+  }
+  async function boot() {
+    if (window.Auth && Auth.ready) await Auth.ready;
+    if (!Auth.isLogged() || Auth.getUser().role !== 'consumer') { guest.hidden = false; main.hidden = true; return; }
+    guest.hidden = true; main.hidden = false;
+    try {
+      const prof = await get('/api/account/profile');
+      me = prof.user;
+      document.getElementById('acc-name').textContent = me.name + '，你好';
+      document.getElementById('acc-nick').textContent = me.name;
+      document.getElementById('acc-phone').textContent = me.phone;
+      document.getElementById('acc-avatar').textContent = (me.name || '田').slice(0, 1);
+      document.getElementById('stat-orders').textContent = prof.stats.orders;
+      document.getElementById('stat-aftersales').textContent = prof.stats.aftersales;
+      document.getElementById('stat-reviews').textContent = prof.stats.reviews;
+      document.querySelector('[name=nickname]').value = me.name;
+      const data = await get('/api/orders');
+      const list = data.items || [];
+      ordersEl.innerHTML = list.length ? list.map(orderCard).join('') : emptyState('还没有订单', '去商城挑一件，结算后会出现在这里。', 'receipt', '<a class="btn btn--primary btn--sm" href="/shop.html">去商城</a>');
+      ordersEl.querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => buyAgain(b.dataset.buy, b); });
+      ordersEl.querySelectorAll('[data-review]').forEach((b) => { b.onclick = () => review(b.dataset.review); });
+    } catch (e) { toast(e.message, 'error'); guest.hidden = false; main.hidden = true; }
+  }
+  async function buyAgain(id, btn) {
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/orders/' + encodeURIComponent(id) + '/buy-again', { method: 'POST', headers: authHeaders() });
+      const d = await r.json();
+      if (!r.ok) throw new Error((d.error && d.error.message) || '加入失败');
+      toast(d.added.length ? `已加入购物车 ${d.added.length} 件${d.skipped.length ? '，' + d.skipped[0].name + ' 不可售' : ''}` : '商品当前不可售');
+      if (d.added.length) setTimeout(() => { location.href = '/cart.html'; }, 600);
+    } catch (e) { toast(e.message, 'error'); btn.disabled = false; }
+  }
+  function review(orderId) {
+    modal({
+      title: '评价这次购买',
+      body: `<div class="stack gap-200">
+        <label class="field"><span class="field__label">评分</span><select class="select" name="rating"><option value="5">5 分 · 很好</option><option value="4">4 分 · 不错</option><option value="3">3 分 · 一般</option><option value="2">2 分 · 不满意</option><option value="1">1 分 · 很差</option></select></label>
+        <label class="field"><span class="field__label">评价内容</span><textarea class="textarea" name="text" maxlength="500" placeholder="说说口感和溯源体验"></textarea></label>
+      </div>`,
+      actions: [{ label: '取消' }, { label: '发布评价', variant: 'btn--primary', onClick: async (box) => {
+        const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), body: JSON.stringify({ rating: box.querySelector('[name=rating]').value, text: box.querySelector('[name=text]').value }) });
+        const d = await r.json();
+        if (!r.ok) { toast((d.error && d.error.message) || '评价失败', 'error'); return false; }
+        toast('评价已发布');
+        if (window.trackEvent) trackEvent('review', { objectType: 'product', objectId: orderId });
+        boot(); return true;
+      } }],
+    });
+  }
+  document.getElementById('login-btn').onclick = () => Auth.openLogin({ role: 'consumer', onSuccess: boot });
+  document.getElementById('profile-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const nickname = e.target.nickname.value.trim();
+    try {
+      const r = await fetch('/api/account/profile', { method: 'PATCH', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), body: JSON.stringify({ nickname }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error((d.error && d.error.message) || '保存失败');
+      toast('昵称已更新'); boot(); Auth.renderNavAuth();
+    } catch (err) { toast(err.message, 'error'); }
+  };
+  async function privacyBoot() {
+    if (!me) return;
+    try {
+      const data = await get('/api/account/consent');
+      const box = document.getElementById('privacy-consent');
+      const status = document.getElementById('consent-status');
+      if (data.privacy !== null) {
+        box.checked = !!data.privacy;
+        status.textContent = data.privacy ? '已同意个性化推荐' : '已拒绝个性化推荐';
+      }
+      const pbox = document.getElementById('profile-consent');
+      const pstatus = document.getElementById('profile-consent-status');
+      if (data.profile !== null) {
+        pbox.checked = !!data.profile;
+        pstatus.textContent = data.profile ? '已授权画像标签' : '未授权画像标签';
+      }
+      pbox.onchange = async () => {
+        try {
+          await fetch('/api/account/consent', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'profile', granted: pbox.checked }),
+          });
+          pstatus.textContent = pbox.checked ? '已授权画像标签' : '未授权画像标签';
+        } catch (e) { toast('记录失败，请重试', 'error'); }
+      };
+      box.onchange = async () => {
+        try {
+          await fetch('/api/account/consent', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'recommendation', granted: box.checked }),
+          });
+          status.textContent = box.checked ? '已同意个性化推荐' : '已拒绝个性化推荐';
+        } catch (e) { toast('记录失败，请重试', 'error'); }
+      };
+    } catch (e) { /* 隐私接口失败不影响订单页 */ }
+    document.getElementById('privacy-export').onclick = async () => {
+      try {
+        const data = await get('/api/account/export');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'tianyuan-account-export.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('数据已导出');
+      } catch (e) { toast(e.message || '导出失败', 'error'); }
+    };
+    document.getElementById('privacy-delete').onclick = async () => {
+      if (!confirm('确认申请注销？当前为演示环境，订单与溯源数据会保留。')) return;
+      try {
+        const r = await fetch('/api/account/delete', { method: 'POST', credentials: 'same-origin' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error((d.error && d.error.message) || '申请失败');
+        toast(d.message || '注销申请已记录');
+        setTimeout(() => { location.href = '/'; }, 600);
+      } catch (e) { toast(e.message || '申请失败', 'error'); }
+    };
+  }
+  async function loadTickets() {
+    const list = document.getElementById('ticket-list');
+    if (!list) return;
+    try {
+      const data = await get('/api/support/tickets');
+      const items = data.items || [];
+      list.innerHTML = items.length ? items.map((t) => `<div class="kv"><span class="kv__k">${esc(t.subject)}</span><span class="kv__v"><span class="badge ${t.status === 'resolved' ? 'badge--green' : 'badge--amber'}">${t.status === 'resolved' ? '已解决' : '处理中'}</span></span></div>`).join('') : '<p class="caption-5 muted">暂无工单</p>';
+    } catch (e) { list.innerHTML = '<p class="caption-5 muted">工单加载失败</p>'; }
+  }
+  const ticketForm = document.getElementById('ticket-form');
+  if (ticketForm) {
+    ticketForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const subject = ticketForm.subject.value.trim();
+      if (!subject) { toast('请填写工单标题', 'error'); return; }
+      try {
+        const r = await fetch('/api/support/tickets', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: ticketForm.type.value, subject, description: ticketForm.description.value.trim() }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error((d.error && d.error.message) || '提交失败');
+        toast(d.message || '工单已提交');
+        ticketForm.reset();
+        loadTickets();
+      } catch (err) { toast(err.message || '提交失败', 'error'); }
+    };
+    loadTickets();
+  }
+  boot().then(() => privacyBoot());
+})();
+</script>
+</body>
+</html>
