@@ -1,550 +1,409 @@
 # 功能与业务逻辑说明
 
-本文回答三个问题：**有哪些功能、谁能用、关键规则是什么**。  
-数据字段与接口细节以 `SPEC.md` 和代码为准；启动与演示见根目录 `README.md`；按角色拆分的运行链见 `USER-FLOWS.md`。
-
-> `SPEC.md` 是早期工程约定，个别示例已落后于当前实现（例如溯源码现为 `TY-...`，商城/订单接口有增补）。字段、状态与权限以本文件和 `server.js` 为准。
+本文说明当前原型**已经实现**的功能、角色、页面、跨角色流程和数据规则。字段与接口细节见 `SPEC.md`，启动方式见仓库根目录 `README.md`。
 
 当前版本：2026-11-27  
-对应代码：`platform/server.js`、`platform/lib/commerce.js`、`platform/lib/auth.js`、`platform/lib/chain.js`、`platform/lib/agent.js`
+对应代码：`platform/server.js`、`platform/lib/`、`platform/public/`
 
 ---
 
-## 1. 角色与权限
+## 1. 主体与角色
 
-### 1.1 三种角色
+### 1.1 三类使用主体
 
-| 角色 | 代码 | 典型入口 | 说明 |
+| 主体 | 入口 | 说明 |
+|---|---|---|
+| 消费者 `consumer` | 首页、商城、个人中心 | 浏览、收藏、购物车、下单、订单、评价、隐私、工单、溯源 |
+| 农户 `farmer` | `/farmer.html` | 入驻申请、商品、批次、农事记录、AI 文案、订单、结算单 |
+| 员工 `staff` | `/admin.html` | 七类员工角色，按权限点看到不同菜单 |
+
+农户状态：
+
+```text
+pending → 审核通过 → active
+   └──── 驳回 ───→ rejected → 修改重提 → pending
+```
+
+未激活的农户不能读取工作台数据，但可以读取自己的审核通知和申请状态。
+
+### 1.2 七类员工角色
+
+| 角色代码 | 名称 | 主要职责 | 数据范围 |
 |---|---|---|---|
-| 消费者 | `consumer` | 首页、商城、个人中心 | 下单、售后、评价、查看自己的订单 |
-| 农户 | `farmer` | `/farmer.html` | 管理自己的批次、农事记录、订单 |
-| 运营 / 监管 | `admin` | `/admin.html` | 审核、预警、链账本、大模型设置、篡改演示 |
+| `super_admin` | 平台超管 | 除大模型设置和篡改演示外的全部业务 | 全部 |
+| `auditor` | 审核专员 | 商品审核、农户审核、订单、审批历史、农户画像 | 全部 |
+| `qa` | 质检溯源专员 | 预警处置、链账本、地标、订单 | 全部 |
+| `cs` | 客服 | 订单、客服 360、客服工单、消费者画像 | 全部；手机号脱敏 |
+| `finance` | 财务 | 订单、分账与对账、标记已结 | 全部 |
+| `origin_ops` | 产地运营 | 所辖产地商品/农户审核、订单、审批历史、农户画像 | 安徽省 |
+| `sys_admin` | 系统管理员 | 账号与角色、角色权限、审计日志、大模型设置、链账本 | 全部 |
 
-农户账号有状态：
+### 1.3 权限矩阵与菜单
 
-- `pending`：刚注册，未通过入驻审核，不能进入工作台；
-- `active`：已通过审核，有 `farmerId`，可进入工作台；
-- `rejected`：审核被驳回，可修改资料后重新提交。
+| 菜单 | 权限点 | 超管 | 审核 | 质检 | 客服 | 财务 | 产地运营 | 系统管理员 |
+|---|---|---|---|---|---|---|---|---|
+| 总览 | `admin.overview` | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |
+| 订单 | `order.view` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |
+| 客服 360 | `cs.view` | ✓ |  |  | ✓ |  |  |  |
+| 客服工单 | `cs.view` | ✓ |  |  | ✓ |  |  |  |
+| 消费者画像 | `cs.view` | ✓ |  |  | ✓ |  |  |  |
+| 农户画像 | `farmer.review` | ✓ | ✓ |  |  |  | ✓ |  |
+| 审批历史 | `farmer.review` | ✓ | ✓ |  |  |  | ✓ |  |
+| 商品审核 | `product.review` | ✓ | ✓ |  |  |  | ✓ |  |
+| 农户审核 | `farmer.review` | ✓ | ✓ |  |  |  | ✓ |  |
+| 预警 | `alert.resolve` | ✓ |  | ✓ |  |  |  |  |
+| 链账本 | `ledger.view` | ✓ |  | ✓ |  |  |  | ✓ |
+| 地标 | `geos.view` | ✓ |  | ✓ |  |  |  | ✓ |
+| 分账与对账 | `settlement.view` | ✓ |  |  |  | ✓ |  |  |
+| 账号与角色 | `staff.manage` | ✓ |  |  |  |  |  | ✓ |
+| 角色权限 | `role.manage` | ✓ |  |  |  |  |  | ✓ |
+| 审计日志 | `audit.view` | ✓ |  |  |  |  |  | ✓ |
+| 大模型设置 | `settings.llm` |  |  |  |  |  |  | ✓ |
 
-### 1.2 权限矩阵
+说明：
 
-| 能力 | 未登录 | 消费者 | 农户（active） | 运营 |
-|---|---|---|---|---|
-| 浏览首页 / 商城 / 商品详情 | 可以 | 可以 | 可以 | 可以 |
-| 查溯源 / 链校验 / 智能体问答 | 可以 | 可以 | 可以 | 可以 |
-| 游客购物车 | 可以（需 `x-guest-id`） | 可以 | 可以 | 可以 |
-| 登录后合并游客购物车 | 不可以 | 可以 | 可以 | 可以 |
-| 结算下单 | 不可以 | 可以 | 不可以 | 不可以 |
-| 查看自己的订单 | 不可以 | 可以 | 只看到自己商品的订单行 | 脱敏全量 |
-| 售后 / 评价 / 再次购买 | 不可以 | 仅自己的订单 | 不可以 | 不可以 |
-| 农户工作台 `dashboard` / `batches` | 不可以 | 不可以 | 仅自己的 `farmerId` | 不可以（接口只允许 farmer） |
-| 新建批次 / 写农事记录 | 不可以 | 不可以 | 仅自己的 `farmerId` | 可以（代写） |
-| 提交农户入驻申请 | 不可以 | 不可以 | 仅 `farmer` 角色，且未通过审核 | 不可以 |
-| 审核农户 / 商品 / 预警 | 不可以 | 不可以 | 不可以 | 可以 |
-| 链账本 / 大模型设置 | 不可以 | 不可以 | 不可以 | 可以 |
+- `super_admin` 没有 `settings.llm` 和 `demo.tamper`，避免超管既改权限又改演示数据。
+- 角色权限可以在「角色权限」中编辑；初始化只在首次建库时写入，重启不会覆盖修改。
+- `origin_ops` 的接口会按 `scope=安徽省` 过滤，总览 KPI、列表、订单、预警、画像都按辖区计算。
+- 客服看到的手机号统一脱敏，例如 `138****0001`。
 
-关键守卫：
+### 1.4 登录与会话
 
-- 未登录访问受保护接口：`401 UNAUTHORIZED`；
-- 角色不符：`403 FORBIDDEN`；
-- 农户未激活：`403 FARMER_PENDING`；
-- 农户访问别人的 `farmerId`：`403 FORBIDDEN`；
-- 订单越权：`403 FORBIDDEN`。
-
-### 1.3 登录态
-
-- 密码：`sha256(salt + "|" + password)`，每人随机 salt，存 `db.users`；
-- Token：`base64url(payload).base64url(HMAC-SHA256(secret, payload))`；
-- payload 含 `uid / role / exp / sid`，有效期 24 小时；
-- `sid` 存在服务进程内的 `TOKENS` Map，登出立即删除；
-- 服务重启后所有 token 失效，需要重新登录；
-- 前端把 token 放 `localStorage`，请求自动带 `Authorization: Bearer ...`；
-- 401 时前端触发登录弹窗或登录门。
-
----
-
-## 2. 页面与功能
-
-共 13 个 HTML 页面。
-
-### 2.1 消费者侧
-
-| 页面 | 地址 | 功能 |
-|---|---|---|
-| 首页 | `/` | 品牌主张、搜索、热门品类、商品卡、品牌片、产地证据、农户入口 |
-| 产地商城 | `/shop.html` | 关键词搜索、分类、排序、商品卡、快速加购 |
-| 商品详情 | `/product.html?id=P01` | 实拍主图、分级溯源信息、批次、检测报告、价格构成、评价、加购/立即购买 |
-| 购物车 | `/cart.html` | 游客/登录购物车、数量修改、删除、合并、结算 |
-| 个人中心 | `/account.html` | 资料、订单统计、订单列表、售后、评价、再次购买、农户申请入口 |
-| 注册 | `/register.html` | 消费者手机号注册，注册后自动登录 |
-| 溯源码页 | `/trace.html?code=TY-2026-0912-DS` | 溯码查询、批次摘要、链校验、3D 旅程、二维码、分级信息、AI 答疑 |
-| 品牌片 | `/brand.html` | 12 秒品牌片、播放/暂停、声音开关、全屏、低动态回退 |
-| 智能体 | `/agent.html` | 溯源问答、内容生成、智能客服三个工作台 |
-| 方向对比 | `/compare.html` | 三套首页视觉方向对比，仅用于设计决策 |
-
-### 2.2 农户 / 运营侧
-
-| 页面 | 地址 | 功能 |
-|---|---|---|
-| 农户工作台 | `/farmer.html` | KPI、待办、批次与赋码、农事记录、AI 文案、订单结算 |
-| 农户入驻 | `/farmer-apply.html` | 提交资料、查看审核状态、被驳回后重新提交 |
-| 运营后台 | `/admin.html` | 总览、链账本、预警处置、商品审核、农户审核、地标库、大模型设置、篡改演示 |
-
-### 2.3 页面通用行为
-
-- 导航、页脚、购物车角标、登录态由 `assets/app.js` 统一渲染；
-- 登录是弹窗，不是单独页面；
-- 手机端（≤900px）导航收进全屏菜单，菜单项支持触摸；
-- 所有页面有骨架屏 / 空状态；
-- 页面 HTML 不缓存，CSS/JS 缓存 60 秒；样式引用带版本号，避免手机旧缓存。
+- 密码使用 **Argon2id**；旧 SHA-256 账号登录成功后自动升级。
+- 会话使用 HttpOnly Cookie `ty_session`，SameSite=Lax；HTTPS 下加 Secure。
+- 不使用 localStorage 保存认证 token。
+- 连续登录失败会临时锁定；登录入口按消费者/农户/员工区分。
+- 写请求校验 Origin；服务端校验角色、权限和农户归属。
+- 停用、离职、已申请注销的账号不能继续登录。
 
 ---
 
-## 3. 核心业务流程
+## 2. 页面
 
-### 3.1 注册 / 登录
+当前共 **12 个 HTML 页面**：
 
-**消费者注册**
+| 页面 | 地址 | 说明 |
+|---|---|---|
+| 首页 | `/` | 品牌主张、搜索、热门品类、商品卡、品牌片、溯源演示 |
+| 产地商城 | `/shop.html` | 搜索、分类、筛选、排序、商品卡、为你推荐 |
+| 商品详情 | `/product.html?id=P01` | 详情、检测、价格构成、评价、收藏、加购、立即购买 |
+| 购物车 | `/cart.html` | 游客/登录购物车、合并、数量、结算 |
+| 个人中心 | `/account.html` | 资料、订单、评价、再次购买、隐私、导出、注销、工单 |
+| 消费者注册 | `/register.html` | 手机号注册并登录 |
+| 溯源码页 | `/trace.html?code=TY-2026-0912-DS` | 链校验、3D 旅程、记录、检测、AI 答疑 |
+| 品牌片 | `/brand.html` | 12 秒品牌片、播放/声音、低动态回退 |
+| 智能体工作台 | `/agent.html` | 溯源问答、内容生成、智能客服 |
+| 农户工作台 | `/farmer.html` | 今日、批次与农事、订单与结算、经营、消息 |
+| 农户入驻 | `/farmer-apply.html` | 注册、登录、提交资料、审核状态、重新提交 |
+| 运营后台 | `/admin.html` | 17 个菜单视图 |
 
-1. `POST /api/auth/register`；
-2. 校验手机号 11 位、密码至少 6 位、同意演示协议；
-3. 手机号重复返回 `409 PHONE_TAKEN`；
-4. 创建 `consumer`，状态 `active`；
-5. 返回 token 和用户信息，前端自动登录。
-
-**登录**
-
-1. `POST /api/auth/login`；
-2. 校验手机号 / 密码；
-3. 返回 token、`publicUser`；
-4. 前端写入 `ty_token`、`ty_user`；
-5. 401 时清除本地会话并弹出登录。
-
-**登出**
-
-`POST /api/auth/logout`，服务端删除 `sid`，前端清 localStorage。
-
-### 3.2 游客购物车 → 登录合并 → 结算
-
-1. 未登录时前端生成 `guestId`，请求头带 `x-guest-id`；
-2. 游客可加购、改数量、删除；
-3. 登录后 `POST /api/cart/merge`，把游客购物车合并到用户购物车；
-4. 同一商品同一批次合并数量，受 `MAX_QTY` 和库存限制；
-5. 结算必须登录且角色为 `consumer`；
-6. `POST /api/checkout` 校验收货人、手机号、城市、详细地址；
-7. 服务端扣减批次 `soldQty`，写订单和商品/批次快照；
-8. 清除已购买购物车行；
-9. 返回订单，提示“演示订单，未发起真实支付”。
-
-### 3.3 商品 → 加购 / 立即购买 → 订单
-
-- 商品可售条件：`product.status === 'on'`，存在批次，批次不是 `shipped`，可用库存 > 0；
-- 可用库存 = 批次总量 − `soldQty`；
-- 立即购买走 `POST /api/orders`，只允许消费者；
-- 订单写入：
-  - `items[]`（商品行、数量、单价、行金额）；
-  - `productSnapshot`、`batchSnapshot`（防商品改价影响历史订单）；
-  - `buyer`、`address`；
-  - `status: 'paid'`、`payment: 'demo'`；
-- 订单号 `DD + 日期 + 序号`；
-- 下单后批次 `soldQty` 增加。
-
-### 3.4 溯源查询与链校验
-
-1. `GET /api/trace/:code` 按溯源码查批次（大小写不敏感）；
-2. 返回商品、农户、批次、记录、检测、运输、校验结果、扫码次数；
-3. `GET /api/trace/:code/verify` 只返回链校验：
-   - 按 `at` 排序；
-   - 逐条重算 `hash = SHA-256(prevHash + "|" + canonical(recordCore))`；
-   - 返回 `{ok, nodes, tamperedIndex}`；
-4. 前端展示每条记录的交易哈希、区块高度、校验状态；
-5. 后台“篡改演示”修改某条记录的 `detail` 但不重算哈希，校验会定位到该条；
-6. 关闭篡改后恢复原文；
-7. 二维码指向 `/t?c=溯源码`，302 到 `/trace.html?code=...`；
-8. 扫码计数用于识别仿冒。
-
-### 3.5 农户入驻与审核
-
-1. 农户注册：`POST /api/farmer/register`，创建 `role=farmer, status=pending`；
-2. 登录后进入 `/farmer-apply.html`；
-3. `POST /api/farmer/application` 提交：
-   - 组织类型、名称、地区、联系人、主营品类、描述；
-   - 材料只记录元数据，不真实上传文件；
-4. 提交后 `user.status = 'pending'`；
-5. 运营在后台审核：
-   - 通过：生成 `Fxx`，写 `db.farmers`，申请 `approved`，用户 `active` 并绑定 `farmerId`；
-   - 驳回：申请 `rejected`，用户 `rejected`，记录原因；
-6. 被驳回后可修改资料重新提交；已通过不能重复提交。
-
-### 3.6 批次与农事记录
-
-**新建批次**
-
-`POST /api/farmer/:farmerId/batches`：
-
-- 农户只能写自己的 `farmerId`，运营可代写；
-- 生成溯源码：`TY-年份-月日-产品缩写+序号`；
-- 新批次状态 `growing`，记录地块、面积、种植/采收时间、数量、等级。
-
-**写农事记录**
-
-`POST /api/farmer/:farmerId/records`：
-
-- 记录类型：`sow / fertilize / pesticide / irrigate / prune / harvest / process / store / ship`；
-- 写入后调用 `rebuildLedger()`，重算该批次哈希链和全局 ledger；
-- 返回记录和“记录已上链存证”；
-- 记录出现在溯源页时间线。
-
-### 3.6.1 新农户新建商品与平台审核
-
-先区分两个对象：
-
-- **商品 / SKU**：例如“砀山酥梨 · 头茬采摘”，是商城里的展示与定价单位；
-- **批次**：例如 `TY-2026-0912-DS`，是同一商品的一次生产/采收，挂农事记录和溯源码。
-
-当前完整链路：
+后台 17 个视图：
 
 ```text
-农户 active
-  → 新建商品
-  → 商品 status = pending
-  → 平台后台待审
-  → 通过：status = on，进入商城
-  → 驳回：status = rejected，记录原因
-  → 农户修改后重新提交：status = pending
-  → 商品 on 后，才能新建批次
-  → 写农事记录 → 上链 → 消费者扫码
+总览 / 订单 / 客服 360 / 客服工单 / 消费者画像 / 农户画像 /
+审批历史 / 商品审核 / 农户审核 / 预警 / 链账本 / 地标 /
+分账与对账 / 账号与角色 / 角色权限 / 审计日志 / 大模型设置
 ```
 
-**新建商品**
+---
+
+## 3. 消费者流程
+
+### 3.1 浏览、搜索、收藏
+
+- 商城支持关键词、分类、产地、价格、只看可溯源和排序。
+- 商品详情四个标签：`商品详情`、`检测报告`、`价格构成`、`评价`。
+- 登录后可以「收藏」商品；收藏会记录 `favorite` 事件，收藏品类参与推荐排序。
+
+### 3.2 购物车、结算、订单
+
+1. 游客可加购，前端使用 guest id；登录后调用购物车合并。
+2. `POST /api/checkout` 校验收货信息、库存、商品状态。
+3. 订单金额写快照；批次 `soldQty` 增加；购物车已购行清除。
+4. 订单为演示支付，不产生真实扣款。
+5. 个人中心可查看、评价、再次购买、提交售后和工单。
+
+### 3.3 隐私、工单、溯源
+
+- 个人中心可开关个性化推荐和画像授权；可导出数据、申请注销。
+- 客服工单类型：售后 / 溯源 / 订单 / 其他。
+- 溯源页输入批次码，查看链校验、3D 旅程和 AI 问答；农户手机号、详细地址不展示。
+
+---
+
+## 4. 农户流程
+
+### 4.1 入驻
+
+1. `/farmer-apply.html` 注册农户账号，状态为 `pending`。
+2. 填写经营主体、名称、地区、联系人、主营品类、说明和材料元数据。
+3. 审核通过后生成农户编号（如 `F11`），账号变为 `active`。
+4. 驳回后可在「今日 → 消息」看到原因，修改后重新提交。
+
+### 4.2 工作台四个页签
+
+| 页签 | 内容 |
+|---|---|
+| 今日 | 消息、今日概览、待处理事项（补记录/发货/补资料） |
+| 批次与农事 | 新建商品、新建批次、赋码、农事记录、AI 文案 |
+| 订单与结算 | 订单行、发货演示、结算单、平台服务费与成本明细 |
+| 经营 | 经营趋势、商品/订单/收入概览 |
+
+「消息」显示入驻审核、商品审核、结算等站内通知。
+
+### 4.3 商品、批次、记录
+
+- 新建商品后状态为 `pending`，平台通过后才进入商城。
+- 只有 `on` 商品可建批次；批次生成 `TY-...` 溯源码。
+- 农事记录支持语音、拍照、扫码、手动四种方式；提交即上链。
+- 记录写入后不可删除，只能追加更正；用药记录校验安全间隔期。
+- AI 文案选商品、批次、渠道后生成标题、卖点、分镜和话题标签。
+
+### 4.4 订单与结算
+
+- 农户看到自己商品行的订单；已付款/打包中的订单有「发货」按钮。
+- 当前「确认发货」只给演示提示，不写入真实运单。
+- 财务在后台「分账与对账」标记已结后，农户收到通知并可查看结算单。
+- 结算单列出成交额、平台费、检测/赋码/冷链成本与农户应付。
+
+---
+
+## 5. 运营后台
+
+### 5.1 审核与通知
+
+- 农户审核：「通过并开通」或「驳回」，写通知和审计。
+- 商品审核：「通过上架」或「驳回」，通过后商城可见。
+- 审批历史展示农户/商品审核的事件时间线，包括驳回、重提、通过。
+
+### 5.2 客服与工单
+
+- 客服 360：客户、脱敏手机号、订单数、消费、售后数。
+- 客服工单：查看并「解决」，填写处理结果后通知消费者。
+
+### 5.3 预警、链账本、地标
+
+- 预警按等级筛选，填写处置说明后 `resolved`。
+- 链账本显示记录、写入方、时间、交易哈希；系统管理员可开关「篡改演示」。
+- 篡改演示只改本地演示数据，关闭后恢复原文。
+- 地标库只读，展示地理标志名称、登记号、产区、授权量。
+
+### 5.4 分账与对账
+
+- 按成交额演示 3% 平台服务费。
+- 财务点「标记已结」，写 `settlement_state`，通知农户并写审计。
+- 不是实际打款、银行回单或提现。
+
+### 5.5 画像与推荐
+
+- 消费者画像：样本、消费、订单、画像同意、标签、行为事件、推荐效果。
+- 农户画像：产地、商品/批次/记录、档案完整度、预警、标签。
+- 「生成快照」写入 `profile_snapshot`；产地运营只看到辖区数据。
+- 推荐效果：曝光、点击、CTR、点击加购、点击后下单、CVR；按事件口统计。
+
+### 5.6 账号、角色、审计、设置
+
+- 账号与角色：改角色/状态后「保存」，服务端校验最后一个超管等规则。
+- 角色权限：勾选权限点后「保存权限」，运行时和后续请求立即按新权限执行。
+- 审计日志：审核、处置、设置、篡改、账号/角色、工单、结算、注销等动作留痕。
+- 大模型设置：仅系统管理员；未配置时使用本地规则引擎。
+
+---
+
+## 6. 跨角色闭环
+
+| 流程 | 链路 |
+|---|---|
+| 农户入驻 | 注册 → 提交 → 审核 → 开通/驳回 → 消息 → 重提 |
+| 商品上架 | 新建商品 → 待审 → 商品审核 → 上架/驳回 → 商城/重提 |
+| 一箱货溯源 | 建批次 → 记录上链 → 消费者扫码 → 链校验/3D/AI → 篡改失败演示 |
+| 下单结算 | 加购 → 合并购物车 → 结算 → 农户订单 → 财务标记已结 → 农户结算单 |
+| 质量风险 | 预警 → 质检/运营处置 → 工单/售后 → 客服解决 → 通知 |
+| 权限审计 | 员工登录 → 权限点/范围 → 手机号脱敏 → 角色变更 → 审计日志 |
+| 个性化推荐 | 隐私授权 → 行为事件 → 商城推荐 → 运营看推荐效果/快照 |
+
+---
+
+## 7. 数据与状态
+
+### 7.1 存储
+
+- SQLite：`platform/data/tianyuan.sqlite`，WAL 模式。
+- 运行时数据库和 `.acceptance.env` 不进入 Git。
+- 种子数据在 `platform/data/seed.js`；首次启动或空库时生成。
+
+主要表：
 
 ```text
-POST /api/farmer/:farmerId/products
-body: {
-  name, category, price, unit, spec, grade,
-  summary, geo, art, highlights?,
-  organic?, greenFood?, geoIndication?
-}
+business / app_state
+staff / staff_role / role / permission / role_permission
+consumer / farmer_account / farmer / consent_record
+favorite / event_log / profile_snapshot
+notification / support_ticket / audit_log
+settlement_state / id_mapping
 ```
 
-规则：
+`business` 以 JSON 行保存商品、批次、记录、订单、评价、预警、地标、申请、链账本、购物车等业务对象。
 
-- 农户只能写自己的 `farmerId`；运营可代建，但必须显式传 `body.farmerId`；
-- 商品 `farmerId` 由服务端决定，不信任请求体；
-- 名称 2–40 字，同一农户不能重名；
-- 品类必须属于现有品类（水果 / 粮油 / 肉禽蛋 / 滋补）；
-- 售价 0.01–99999 元；
-- 商品简介必填，最多 200 字；
-- 主图从内置实拍图库选择（`pear / apple / orange / strawberry / rice / banana / beef / lamb / goji`），校验文件存在；
-- 新商品状态固定为 `pending`；
-- 自动生成价格构成：地头收购、分选包装、冷链运输、平台服务、农户收益，合计等于售价。
+### 7.2 状态
 
-**平台审核**
+| 对象 | 状态 |
+|---|---|
+| 农户账号 | `pending / active / rejected` |
+| 农户申请 | `pending / approved / rejected` |
+| 商品 | `pending / on / rejected` |
+| 批次 | `growing / listed / shipped`（种子数据） |
+| 订单 | `paid / aftersale`（代码写入）；`packing / shipping / delivered / done` 为种子展示 |
+| 预警 | `open / resolved` |
+| 工单 | `open / in_progress / resolved` |
+| 结算 | 未结算 / `paid`（演示） |
+
+### 7.3 关键不变量
+
+- 商品可售：商品 `on`、有批次、批次非 `shipped`、可用库存大于 0。
+- 库存：`soldQty` 只增；可用量 = 批次数量 − `soldQty`。
+- 订单写商品/批次快照，后续改价不影响历史订单。
+- 消费者只能看自己的订单；农户只看自己商品行且地址隐藏；运营看脱敏全量。
+- 链：每条记录有 `prevHash / hash / tx / height`，按时间重算校验。
+
+---
+
+## 8. API 摘要
+
+### 公开
 
 ```text
-GET  /api/admin/overview          → audit[] 包含 pending 商品
+GET  /api/health
+GET  /api/meta
+GET  /api/products
+GET  /api/products/:id
+GET  /api/trace/:code
+GET  /api/trace/:code/verify
+GET  /api/kb
+GET  /api/qr?data=&size=
+POST /api/agent/ask
+POST /api/agent/content
+POST /api/agent/service
+```
+
+### 认证与账号
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/session
+GET  /api/auth/me
+GET  /api/account/profile
+PATCH /api/account/profile
+GET  /api/account/export
+POST /api/account/delete-request
+GET  /api/consents
+POST /api/consents
+POST /api/events
+```
+
+### 消费者
+
+```text
+GET/POST/PATCH/DELETE /api/cart*
+POST /api/cart/merge
+POST /api/checkout
+GET  /api/orders
+GET  /api/orders/:id
+POST /api/orders/:id/aftersale
+POST /api/orders/:id/review
+POST /api/orders/:id/buy-again
+GET  /api/favorites
+POST /api/products/:id/favorite
+GET  /api/support/tickets
+POST /api/support/tickets
+GET  /api/notifications
+POST /api/notifications/:id/read
+POST /api/notifications/read-all
+```
+
+### 农户
+
+```text
+POST /api/farmer/register
+GET/POST /api/farmer/application
+GET  /api/farmer/me/dashboard
+GET  /api/farmer/me/batches
+POST /api/farmer/me/products
+PATCH /api/farmer/me/products/:id
+POST /api/farmer/me/batches
+POST /api/farmer/me/records
+GET  /api/farmer/me/orders
+GET  /api/farmer/me/settlements
+```
+
+### 运营
+
+```text
+GET  /api/admin/overview
+GET  /api/admin/orders
+GET  /api/admin/customers
+GET  /api/admin/tickets
+POST /api/admin/tickets/:id/resolve
+GET  /api/admin/profiles/consumers
+GET  /api/admin/profiles/farmers
+GET/POST /api/admin/profiles/snapshot
+GET  /api/admin/recommendations/stats
+GET  /api/admin/approvals
+GET  /api/admin/applications
+POST /api/admin/applications/:id/review
+GET  /api/admin/products
 POST /api/admin/products/:id/review
-body: { action: 'approve' | 'reject', reason? }
+POST /api/admin/alerts/:id/resolve
+GET  /api/admin/ledger
+GET  /api/admin/geos
+GET  /api/admin/settlement
+POST /api/admin/settlement/:id/pay
+GET  /api/admin/staff
+PATCH /api/admin/staff/:id
+GET  /api/admin/roles
+PATCH /api/admin/roles/:code
+GET  /api/admin/audit
+GET/POST /api/admin/settings
+POST /api/admin/demo/tamper
 ```
 
-- 通过：`status = on`，进入商城，可建批次；
-- 驳回：`status = rejected`，写 `reviewNote` 与 `reviewedAt`；
-- 农户可在工作台看到驳回原因，点「修改重提」编辑后重新提交，商品回到 `pending`。
+具体请求体、响应字段和状态码以 `platform/server.js` 为准。
 
-**展示约束**
+---
 
-- 公开 `GET /api/products` 只返回 `status === 'on'`；
-- 待审/驳回商品详情只允许货主和运营预览，其他人 404；
-- 农户工作台显示商品审核状态（待审核 / 已上架 / 已驳回）；
-- 新农户没有已上架商品时，批次区引导先“新建商品”，不显示新建批次入口。
+## 9. 安全规则
 
-**建批次约束**
+- 未登录访问受保护接口返回 401；角色不符返回 403。
+- 写请求检查 Origin。
+- 后台菜单隐藏只是展示，服务端仍逐请求校验权限点。
+- 农户只能访问自己的 farmerId；客服手机号脱敏；产地运营按 `origin.scope` 裁剪。
+- 最后一个超管不能降级/停用；不能停用自己。
+- 敏感动作写 `audit_log`。
+- 密码只存 Argon2 哈希；API Key 加密存储，只回显掩码。
+
+---
+
+## 10. 未实现与已知边界
+
+- 无真实支付、退款、银行打款、物流接口；结算只是状态标记。
+- 无短信/微信/邮件通知，只有站内通知。
+- 农户「确认发货」目前只提示，不生成真实运单。
+- 商品主图和资质材料只记录元数据/内置图片，没有对象存储上传。
+- 链是本地 SHA-256 哈希链，不是联盟链。
+- 历史评价有少量缺少 `userId`，未做不可靠归因。
+- 没有定时画像快照任务；快照需手动生成。
+- 没有限流、验证码、密码找回、刷新 token。
+- 当前是单机 SQLite，不适合多实例并发。
+
+## 11. 验收
 
 ```text
-POST /api/farmer/:farmerId/batches
+node --check platform/server.js
+GET /api/health → 200
+node --test tests/acceptance/phase0.test.mjs
+node tests/acceptance/snapshot.mjs --check
 ```
 
-- 商品必须存在且 `status === 'on'`；
-- 农户只能为自己的商品建批次；
-- 运营可代建；
-- 建批次后生成 `TY-...` 溯源码，状态 `growing`。
-
-**前端入口**
-
-- `/farmer.html` → 批次与赋码 → 「新建商品」；
-- 表单字段：名称、品类、售价、规格、等级、主图、产地、详细规格、简介；
-- 提交后提示“已提交审核”，商品以“待审核”状态出现在批次区顶部；
-- 运营在 `/admin.html` → 商品审核中通过后，商品出现在 `/shop.html`。
-
-> 说明：当前“主图”是从内置实拍图库选择，不是真实文件上传；对象存储/图片上传仍未实现。
-
-### 3.7 售后 / 评价 / 再次购买
-
-**售后**
-
-`POST /api/orders/:id/aftersale`：
-
-- 只能操作自己的订单；
-- 类型：`bad`（坏果）/ `missing`（少件）/ 其他；
-- 自动核赔比例：坏果 50%、少件 30%、其他 15%；
-- 写 `afterSale`，订单状态置 `aftersale`；
-- 提示“演示自动核赔，未发起真实退款”。
-
-**评价**
-
-`POST /api/orders/:id/review`：
-
-- 只能评价自己的订单；
-- 同一订单同一商品只能评价一次，重复返回 `409 ALREADY_REVIEWED`；
-- 评分 1–5，文本最多 500 字，标签最多 5 个；
-- 更新商品 `ratingAvg / ratingCount`。
-
-**再次购买**
-
-`POST /api/orders/:id/buy-again`：
-
-- 把订单中仍可售的商品加入购物车；
-- 不可售的跳过，返回 `added / skipped`。
-
-### 3.8 智能体
-
-三个入口：
-
-| 接口 | 用途 | 输入 | 输出 |
-|---|---|---|---|
-| `POST /api/agent/ask` | 溯源问答 | `question`，可选 `code` | 意图、工具步骤、回答、引用、置信度、追问 |
-| `POST /api/agent/content` | 内容生成 | 商品/批次、渠道、语气 | 标题、卖点、详情、脚本、话题 |
-| `POST /api/agent/service` | 智能客服 | 问题、可选订单号 | 回答、动作、是否转人工、引用 |
-
-逻辑：
-
-1. 识别意图与槽位；
-2. 调用只读工具（批次、记录、检测、运输、订单等）；
-3. 知识库 Top 3 召回；
-4. 先结论后依据，附记录编号 / 交易哈希；
-5. 如果后台启用大模型，先走模型（温度默认 0.2、20 秒超时）；
-6. 模型失败或未配置，回退本地确定性引擎；
-7. 匿名客服只能使用完全脱敏的演示订单。
-
-### 3.9「一箱货的旅程」3D
-
-1. 溯源页渲染结果后，`Journey3D.mount(data)` 读取当前批次四站数据；
-2. 四站：梨园 → 分选打包 → 冷链 → 餐桌；
-3. 点击编号或右侧步骤：
-   - 右侧详情切换；
-   - 相机平滑推近该站；
-   - 选中标记放大变色；
-4. 点「看全景」或再次点当前站，回到全局视角；
-5. 拖动旋转，围绕当前站点查看；
-6. 桌面端开启阴影；手机端关闭阴影、DPR 上限 1.35、关闭抗锯齿；
-7. 手机端同样可拖动、点击站点，不是静态图；
-8. 系统“减少动态效果”或浏览器无 WebGL：回退静态全景图，步骤按钮仍可切换；
-9. Three.js 只在溯源页懒加载，本地文件，不走 CDN。
-
----
-
-## 4. 状态机
-
-### 4.1 订单
-
-当前代码会写入的状态：
-
-| 状态 | 含义 | 进入方式 |
-|---|---|---|
-| `paid` | 已支付（演示） | 结算或立即购买 |
-| `aftersale` | 售后中 | 提交售后 |
-
-种子数据还会出现：
-
-| 状态 | 含义 |
-|---|---|
-| `packing` | 待打包 |
-| `shipping` | 运输中 |
-| `delivered` | 已送达 |
-| `done` | 已完成 |
-
-说明：当前没有“取消订单 / 发货 / 确认收货”接口，`packing / shipping / delivered / done` 主要用于演示展示；订单状态流转完整实现不在本原型范围内。
-
-### 4.2 农户申请
-
-```text
-pending ──通过──> approved
-   │
-   └──驳回──> rejected ──修改后重新提交──> pending
-```
-
-### 4.3 农户账号
-
-```text
-pending ──审核通过──> active
-   │
-   └──驳回──> rejected ──重新提交──> pending
-```
-
-### 4.4 商品
-
-```text
-pending ──通过──> on
-   │
-   └──驳回──> rejected
-```
-
-### 4.5 批次
-
-- 新建批次：`growing`；
-- 种子数据：`listed`、`shipped`；
-- `shipped` 批次不可再售；
-- 当前没有批次状态流转接口。
-
-### 4.6 预警
-
-```text
-open ──运营处置──> resolved
-```
-
----
-
-## 5. API 一览
-
-只列主要接口；完整字段见 `SPEC.md` 与 `server.js`。
-
-### 5.1 公开 / 基础
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/api/health` | 健康检查 |
-| GET | `/api/meta` | 分类、产地、平台统计、LLM 状态 |
-| GET | `/api/products` | 商品列表，支持 `category / q / sort / traceOnly` |
-| GET | `/api/products/:id` | 商品详情、批次、评价、价格构成、生成内容 |
-| GET | `/api/trace/:code` | 溯源全量 |
-| GET | `/api/trace/:code/verify` | 链校验 |
-| POST | `/api/agent/ask` | 溯源问答 |
-| POST | `/api/agent/content` | 内容生成 |
-| POST | `/api/agent/service` | 客服 |
-| GET | `/api/demo/orders` | 完全脱敏的演示订单 |
-| GET | `/api/qr?data=&size=` | SVG 二维码 |
-| GET | `/api/kb` | 知识库 |
-
-### 5.2 登录 / 账号
-
-| 方法 | 路径 | 权限 |
-|---|---|---|
-| POST | `/api/auth/register` | 公开 |
-| POST | `/api/auth/login` | 公开 |
-| POST | `/api/auth/logout` | 登录 |
-| GET | `/api/auth/me` | 登录 |
-| GET | `/api/account/profile` | consumer |
-| PATCH | `/api/account/profile` | consumer |
-
-### 5.3 购物车 / 结算
-
-| 方法 | 路径 | 权限 |
-|---|---|---|
-| GET | `/api/cart` | 游客或登录 |
-| POST | `/api/cart/items` | 游客或登录 |
-| PATCH | `/api/cart/items/:key` | 游客或登录 |
-| DELETE | `/api/cart/items/:key` | 游客或登录 |
-| POST | `/api/cart/merge` | 登录 |
-| POST | `/api/checkout` | consumer |
-
-### 5.4 订单
-
-| 方法 | 路径 | 权限 |
-|---|---|---|
-| GET | `/api/orders` | 登录，按角色裁剪 |
-| GET | `/api/orders/:id` | 登录，`canView` |
-| POST | `/api/orders` | consumer |
-| POST | `/api/orders/:id/aftersale` | 订单所有者 |
-| POST | `/api/orders/:id/review` | 订单所有者 |
-| POST | `/api/orders/:id/buy-again` | 登录，订单所有者 |
-
-### 5.5 农户
-
-| 方法 | 路径 | 权限 |
-|---|---|---|
-| POST | `/api/farmer/register` | 公开 |
-| GET / POST | `/api/farmer/application` | farmer |
-| GET | `/api/farmer/:id/dashboard` | farmer，仅自己 |
-| GET | `/api/farmer/:id/batches` | farmer，仅自己 |
-| POST | `/api/farmer/:id/products` | farmer（自己）/ admin（指定 farmerId） |
-| PATCH | `/api/farmer/:id/products/:productId` | farmer（自己）/ admin，待审或驳回商品 |
-| POST | `/api/farmer/:id/batches` | farmer（自己）/ admin |
-| POST | `/api/farmer/:id/records` | farmer（自己）/ admin |
-
-### 5.6 运营
-
-| 方法 | 路径 | 权限 |
-|---|---|---|
-| GET | `/api/admin/overview` | admin |
-| GET | `/api/admin/ledger` | admin |
-| GET | `/api/admin/applications` | admin |
-| POST | `/api/admin/applications/:id/review` | admin |
-| POST | `/api/admin/alerts/:id/resolve` | admin |
-| POST | `/api/admin/products/:id/review` | admin |
-| POST | `/api/admin/demo/tamper` | admin |
-| GET / POST | `/api/settings` | admin |
-
----
-
-## 6. 数据与关键不变量
-
-- 数据文件：`platform/data/db.json`；删除后重启恢复种子数据。
-- 用户：`db.users`，密码只存 hash + salt。
-- 商品/批次：订单写入快照，后续改价不影响历史订单。
-- 库存：`soldQty` 只增不减；可用量 = `qty - soldQty`；`shipped` 批次不可售。
-- 购物车：登录用 `u:<userId>`，游客用 `g:<guestId>`；合并时按商品+批次去重。
-- 订单可见性：
-  - 消费者：自己的订单，完整地址；
-  - 农户：自己商品行，买家手机号脱敏，详细地址隐藏；
-  - 运营：全量但脱敏。
-- 链：每条记录有 `prevHash / hash / tx / height`；`rebuildLedger` 按时间重算。
-- 二维码：`/api/qr` 生成 SVG；溯源页二维码指向 `/t?c=...`。
-- Token：内存存储，重启失效；不适合多实例共享。
-
----
-
-## 7. 失败与降级
-
-| 场景 | 行为 |
-|---|---|
-| 未登录访问受保护接口 | 401，前端弹登录 |
-| 角色不符 | 403 |
-| 农户待审核访问工作台 | 403 `FARMER_PENDING` |
-| 商品下架 / 批次售罄 / 库存不足 | 409，返回原因 |
-| 重复评价 | 409 `ALREADY_REVIEWED` |
-| 重复手机号注册 | 409 `PHONE_TAKEN` |
-| 大模型未配置或超时 | 回退本地确定性引擎 |
-| 无 WebGL / 减少动态 | 3D 回退静态全景，步骤仍可切换 |
-| 视频 Range 请求 | 206，支持 iOS/Safari |
-| 静态资源不存在 | 404 JSON |
-
----
-
-## 8. 未实现 / 边界
-
-- 未接真实支付、退款、物流接口；
-- 商品主图从内置实拍图库选择，未接真实文件上传/对象存储；
-- 没有取消订单、发货、确认收货的完整状态流转 API；
-- 农户材料只记录文件元数据，没有真实上传与存储；
-- 没有地址簿，结算地址只写订单快照；
-- 没有短信验证码、找回密码、刷新 token；
-- 没有限流、防刷、CSRF、审计日志；
-- 单机 JSON 存储，不适合多实例并发；
-- 3D 为示意沙盘，不是真实地块边界或 GPS 地图；
-- NATAPP 免费隧道为 HTTP，仅适合课程演示。
-
----
-
-## 9. 验收清单
-
-- `node --check server.js` 通过；
-- `/api/health` 返回 200；
-- 13 个页面均 200；
-- 消费者可注册、登录、加购、结算；
-- 农户待审核不能进工作台，审核通过后可写记录；
-- 农户可新建商品；待审商品不进商城；运营通过后可建批次；
-- 建批次会校验商品归属，跨农户返回 403；
-- 溯源页可查批次、链校验、3D 四站切换；
-- 后台可审核、处置预警、篡改演示；
-- 390 / 768 / 1024 / 1440 无横向溢出；
-- 每页 console 无 error。
+页面清单：12 个 HTML 页面；后台 17 个视图；桌面与 390px 宽移动端无横向溢出。

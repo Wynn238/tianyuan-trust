@@ -55,8 +55,6 @@ node scripts/bootstrap-demo.mjs
 3. 把演示账号口令初始化为公开演示口令；
 4. 启动服务并打开 <http://127.0.0.1:8848>。
 
-Windows PowerShell 如果不支持 `&&`，就分三行执行上面的命令。
-
 ### 直接交给 AI Agent 的一句话
 
 ```text
@@ -101,7 +99,7 @@ DEMO_PASSWORD='请换成一个至少 6 位的本地口令' node scripts/set-loca
 node server.js
 ```
 
-也可以直接双击根目录的 `启动平台.bat`，它会优先使用系统 Node；没有安装 Node 时会尝试使用本机运行时路径。
+也可以直接双击根目录的 `启动平台.bat`（Windows）。它使用系统安装的 Node.js 22+；没有安装时会给出提示。
 
 ### 演示数据
 
@@ -138,10 +136,11 @@ platform/
   lib/                      数据库、认证、哈希链、智能体、二维码
   data/seed.js              种子数据
   public/                   12 个页面与本地静态资源
-  scripts/                  本地演示口令脚本
+  scripts/                  初始化、演示口令脚本
   FUNCTIONS.md              功能、角色权限、流程与状态机
   SPEC.md                   数据模型与 API 约定
   DEPLOY_CLOUDBASE.md       云托管部署说明
+scripts/bootstrap-demo.mjs  一条命令本地启动
 ACCOUNTS.md                 公开演示账号表
 tests/acceptance/           验收测试与快照检查
 ```
